@@ -21,7 +21,7 @@ The original seven planning documents remain unchanged. They define the product 
 
 ## Current SDKs and security
 - Replace the obsolete `@google/generative-ai` examples with `@google/genai`; keep the Gemini provider and multimodal inputs.
-- Gemini model is configurable via `GEMINI_MODEL`, defaulting to `gemini-3.8-flash`, which the Google quickstart used when checked on September 30, 2026.
+- Latest scope: Gemini requires an explicit `GEMINI_MODEL` and `AI_GENERATION_ENABLED=true`; there is no hardcoded default or automatic model fallback. A key/model can remain configured while the feature is disabled. The user subsequently authorized setup: the key is saved in the private backend environment and Google's model list includes `gemini-3.8-flash`, but live generation returned project-level HTTP 403 denial. The enabled flag therefore remains false.
 - Google's deprecation page lists Gemini 2.0 Flash as shut down on June 1, 2026; the old document's model is not a viable fixed default.
 - Primary sources checked: https://ai.google.dev/gemini-api/docs/quickstart and https://ai.google.dev/gemini-api/docs/deprecations . Local research snapshots are gitignored in `tmp/research/`.
 - Use maintained Multer 2 instead of the plan's Multer 1 examples, and React Router 7 instead of version 6 to clear the dependency audit advisories. Preserve the same declarative SPA routing design.
@@ -56,7 +56,16 @@ Upload accepts one multipart field named `file` per request. Chat accepts `proje
 ## Google authentication addition
 The user's latest September 30, 2026 decision supersedes direct Google Identity Services: use a new dedicated Firebase project **only for Google sign-in**, not as a replacement auth/database stack. Created `creatorforge-20260930-204983` and registered its web app; saved public web configuration locally, with live login disabled pending Firebase Auth/Google provider/domain initialization. Firebase popup auth is memory-only and signs out after token extraction. Firebase Admin verifies the token using project ID and public certificates; additional checks restrict it to fresh, verified Google identities. Account mapping retains the existing stable Google subject, MongoDB IDs, password-confirmed linking and CreatorForge JWT sessions. Hashed single-use browser challenges and token receipts protect replay. No service account or billing upgrade is needed for this bridge. See `GOOGLE_AUTH_SETUP.md` for exact status and setup.
 
-Firebase Admin's optional Cloud Storage dependency introduced an audited vulnerable `uuid` under `gaxios`; a narrowly scoped npm override upgrades that transitive package to the patched 11.x range. No storage feature is enabled.
+Firebase Admin's optional Cloud Storage dependency introduced an audited vulnerable `uuid` under `gaxios`; an earlier scoped override was attempted but the current installed tree still reports two moderate findings. No storage feature is enabled; cleanup remains pending, not a claimed clean audit.
+
+## Content-building checkpoint
+
+The user has taken over authentication/Firebase setup; subsequent work focuses on content and deployment preparation. Authentication/Firebase configuration remains unchanged. AI configuration is separate: a failed provider check never enables the app or changes auth.
+
+- Saved text uses the existing Media document and exact UTF-8 bytes, with a nonempty 60 KB edit limit. Updates accept only `content` and `version`, check project/asset ownership and atomically compare/increment MongoDB `__v` to reject stale edits.
+- GET `/api/projects/:id/media/:mediaId/edit` returns one consistent content/version snapshot; PATCH `/api/projects/:id/media/:mediaId` saves it. GET `/api/projects/:id/media/:mediaId/export?format=markdown|text` exports saved bytes with a safe attachment filename and private/no-store caching.
+- Remix results and library text previews share the saved editor. Downloads never silently export unsaved drafts. Browser warnings and explicit discard/reload controls protect common unsaved-edit paths; full SPA-history blocking and revision history remain future work.
+- `npm run check:deploy` is an offline readiness check, not a deploy command or proof of live credential validity. It deliberately skips user-managed Firebase setup and does not modify secrets or cloud resources.
 
 ## Execution constraints
 The user requested task-specific agents. Three independent workers were attempted for backend, frontend, and tests, but all failed before doing work with HTTP 426 `app_update_required`. The main builder completed these tasks locally. HeyClicky must be updated before parallel worker attempts can succeed.

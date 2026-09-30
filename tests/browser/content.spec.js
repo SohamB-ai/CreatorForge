@@ -18,6 +18,15 @@ async function prepare(page, request, label) {
   return { account, project, asset, headers };
 }
 
+test('a configured but paused AI connection gives an actionable setup message', async ({ page, request }, info) => {
+  await page.route('**/api/health', (route) => route.fulfill({ json: { database: 'connected', aiConfigured: false, aiConfiguration: { enabled: false, keyPresent: true, modelPresent: true, model: 'gemini-test-model' } } }));
+  const fixture = await prepare(page, request, `paused-${info.project.name}`);
+  await expect(page.getByText('AI generation is paused.', { exact: true })).toBeVisible();
+  await expect(page.getByText(/Key and model are configured/)).toBeVisible();
+  await expect(page.getByText(/Creates text and code, not rendered images or videos/)).toBeVisible();
+  await request.delete(`/api/projects/${fixture.project._id}`, { headers: fixture.headers });
+});
+
 test('saved content edits survive reload and export exact Markdown and text bytes', async ({ page, request }, info) => {
   const fixture = await prepare(page, request, `persist-${info.project.name}`);
   const errors = [];

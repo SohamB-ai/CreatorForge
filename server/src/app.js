@@ -63,10 +63,13 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
   app.disable('x-powered-by');
   app.use(helmet());
   app.use(cors({ origin: clientUrl, credentials: true }));
+  const editJson = express.json({ limit: '400kb' });
+  app.use('/api/projects/:id/media/:mediaId', (request, response, next) => request.method === 'PATCH' ? editJson(request, response, next) : next());
   app.use(express.json({ limit: '100kb' }));
   app.get('/api/health', (request, response) => response.status(mongoose.connection.readyState === 1 ? 200 : 503).json({
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
     aiConfigured: generate.configured,
+    aiConfiguration: generate.configuration,
   }));
   const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 50, standardHeaders: 'draft-8', legacyHeaders: false, message: { error: 'Too many sign-in attempts. Try again in 15 minutes.' } });
   const tokenFor = (user) => jwt.sign({ id: user._id.toString() }, jwtSecret, { algorithm: 'HS256', expiresIn: '7d', issuer: 'creatorforge', audience: 'creatorforge-client' });
@@ -224,7 +227,7 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
     if (error.code === 11000) return response.status(409).json({ error: 'This account already exists.' });
     if (error.type === 'entity.parse.failed') return response.status(400).json({ error: 'Invalid JSON request.' });
     if (error.type === 'entity.too.large') return response.status(413).json({ error: 'Request is too large.' });
-    response.status(error.status || 500).json({ error: error.status ? error.message : 'An unexpected server error occurred. Please try again.' });
+    response.status(error.status || 500).json({ error: error.status ? error.message : 'An unexpected server error occurred. Please try again.', ...(typeof error.code === 'string' && error.code.startsWith('AI_') ? { code: error.code } : {}) });
   });
   return app;
 }

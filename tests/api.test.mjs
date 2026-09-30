@@ -13,11 +13,12 @@ let server;
 let base;
 let requests = [];
 let providerFails = false;
+let providerStatus = 500;
 const jwtSecret = 'test-only-creatorforge-secret-at-least-thirty-two-characters';
 before(async () => {
   database = await MongoMemoryServer.create();
   await mongoose.connect(database.getUri(), { dbName: 'creatorforge-test' });
-  const app = createApp({ jwtSecret, aiEnabled: true, geminiModel: 'gemini-test-model', generateContent: async (request) => { requests.push(request); if (providerFails) throw new Error('provider secret must never be exposed'); return { text: '# Test generation\nGrounded in the supplied sources.' }; } });
+  const app = createApp({ jwtSecret, aiEnabled: true, geminiModel: 'gemini-test-model', generateContent: async (request) => { requests.push(request); if (providerFails) throw Object.assign(new Error('provider secret must never be exposed'), { status: providerStatus }); return { text: '# Test generation\nGrounded in the supplied sources.' }; } });
   server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
   base = `http://127.0.0.1:${server.address().port}/api`;
@@ -158,9 +159,12 @@ test('CreatorForge authentication, ownership, media, brand and generation contra
   await context.test('editing validates UTF-8 byte limits, nulls, versions and immutable fields', async () => {
     const endpoint = `/projects/${project._id}/media/${asset._id}`;
     for (const body of [{ content: 'a'.repeat(60001), version: 2 }, { content: '✨'.repeat(21000), version: 2 }, { content: 'null\0byte', version: 2 }, { content: 'valid', version: -1 }, { content: 'valid', version: 2, userId: stranger.user._id }, { content: 'missing version' }]) assert.equal((await request(endpoint, { token: owner.token, method: 'PATCH', body })).status, 400);
-    const saved = await request(endpoint, { token: owner.token, method: 'PATCH', body: { content: '', version: 2 } });
+    const escaped = await request(endpoint, { token: owner.token, method: 'PATCH', body: { content: '\n'.repeat(59999) + 'x', version: 2 } });
+    assert.equal(escaped.status, 200);
+    assert.equal(escaped.data.asset.size, 60000);
+    const saved = await request(endpoint, { token: owner.token, method: 'PATCH', body: { content: '', version: 3 } });
     assert.equal(saved.status, 400);
-    assert.equal((await request(`${endpoint}/edit`, { token: owner.token })).data.version, 2);
+    assert.equal((await request(`${endpoint}/edit`, { token: owner.token })).data.version, 3);
   });
   await context.test('Markdown and text exports download the saved bytes with safe headers', async () => {
     const generated = await Media.findOne({ projectId: project._id, mimeType: 'text/markdown' }).select('+data');
@@ -187,6 +191,19 @@ test('CreatorForge authentication, ownership, media, brand and generation contra
     assert.doesNotMatch(reply.data.error, /provider secret/);
     assert.equal(await Message.countDocuments({ projectId: project._id }), count);
     providerFails = false;
+  });
+  await context.test('Google project access denial is actionable and never expires the CreatorForge session', async () => {
+    providerFails = true; providerStatus = 403;
+    const count = await Message.countDocuments({ projectId: project._id });
+    try {
+      const reply = await request('/chat', { token: owner.token, method: 'POST', body: { projectId: project._id, message: 'Animate my logo.' } });
+      assert.equal(reply.status, 503);
+      assert.equal(reply.data.code, 'AI_ACCESS_DENIED');
+      assert.match(reply.data.error, /Google denied generation access/);
+      assert.doesNotMatch(reply.data.error, /provider secret/);
+      assert.equal(await Message.countDocuments({ projectId: project._id }), count);
+      assert.equal((await request('/auth/me', { token: owner.token })).status, 200);
+    } finally { providerFails = false; providerStatus = 500; }
   });
   await context.test('missing AI key reports configuration, never fabricated content', async () => {
     const disconnected = createApp({ jwtSecret }).listen(0, '127.0.0.1');

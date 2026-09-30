@@ -29,8 +29,12 @@ export default function SavedContent({ projectId, assetId, onSaved, onDirtyChang
   useEffect(() => {
     callbacks.current.onDirtyChange?.(dirty);
     const warn = (event) => { event.preventDefault(); event.returnValue = ''; };
-    if (dirty) window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
+    const guardLink = (event) => {
+      const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+      if (link && link.target !== '_blank' && !event.metaKey && !event.ctrlKey && !event.shiftKey && !window.confirm('Discard unsaved content changes and leave this page?')) { event.preventDefault(); event.stopPropagation(); }
+    };
+    if (dirty) { window.addEventListener('beforeunload', warn); document.addEventListener('click', guardLink, true); }
+    return () => { window.removeEventListener('beforeunload', warn); document.removeEventListener('click', guardLink, true); };
   }, [dirty]);
   useEffect(() => {
     const abort = new AbortController();

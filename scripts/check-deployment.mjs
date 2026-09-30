@@ -23,7 +23,9 @@ if (process.env.AI_GENERATION_ENABLED === 'true') {
 const frontendApi = process.env.VITE_API_URL;
 const routing = JSON.parse(await readFile(`${root}client/vercel.json`, 'utf8'));
 const proxy = routing.rewrites?.some((rule) => rule.source.startsWith('/api') && secureOrigin(rule.destination));
-check('Production frontend API destination/proxy configured', frontendApi ? secureOrigin(frontendApi) : Boolean(proxy));
+let validApi = false;
+try { validApi = secureOrigin(frontendApi) && /^\/api\/?$/.test(new URL(frontendApi).pathname); } catch {}
+check('Production frontend API destination/proxy configured', frontendApi ? validApi : Boolean(proxy));
 console.log('NOTE: Authentication/Firebase setup is user-managed; this check does not modify it.');
 console.log('NOTE: Offline configuration check only; no deployment, billing, database writes or credentials printed.');
 console.log(failures.length ? `${failures.length} deployment setup item(s) remain.` : 'Configuration checks pass; live connectivity, security audit and browser verification still required.');

@@ -60,18 +60,20 @@ Real local MongoDB data persists in `tmp/mongodb-data`, and a development JWT se
 No cloud account is needed to use registration, projects, media uploads, or brand settings locally.
 There are no seeded projects or simulated AI responses.
 
-To enable live AI, create `server/.env` and add your key locally:
+AI is **off by default**, even when a key is present. To enable it, update the existing `server/.env` with a key and a model you have confirmed works for your account:
 
 ```env
 GEMINI_API_KEY=your_key_here
-GEMINI_MODEL=gemini-3.8-flash
+GEMINI_MODEL=your_confirmed_gemini_model
+AI_GENERATION_ENABLED=true
 ```
 
-Restart the app after changing backend environment variables.
-Missing AI configuration produces a clear message rather than invented output.
+Restart the app after changing backend environment variables. Run `npm run check:ai` to make one minimal live provider request without printing the key or changing the application/authentication flags. Model listing alone is not proof of generation access.
+Replace the model placeholder with an actual `gemini-...` model ID. There is no hardcoded default, automatic model switch or fake-provider fallback. Disabled/incomplete configuration returns a clear error without calling Google or persisting phantom output. Configuration presence does not prove live model access: test an actual generation before release. The user authorized configuration, so the supplied key is now saved only in the gitignored, permission-restricted backend environment. Google lists `gemini-3.8-flash`, but a real generation probe returned HTTP 403: "Your project has been denied access. Please contact support." AI remains explicitly disabled until project access is resolved or a replacement authorized key passes `npm run check:ai`.
 An existing detached development session can be stopped with `kill "$(cat tmp/dev.pid)"` from the project root.
 
 ### Google sign-in
+Authentication and Firebase console setup are now **user-managed**; current build work leaves their configuration untouched.
 Google sign-in uses Firebase **only as the Google identity provider**. MongoDB, email/password login and CreatorForge JWT sessions remain unchanged. The dedicated Firebase project `creatorforge-20260930-204983` and web app are created; their web configuration is saved locally. Live login remains disabled until Firebase Authentication is initialized, Google is enabled, authorized domains are verified, and `FIREBASE_GOOGLE_SIGN_IN_ENABLED=true` is set. The old `GOOGLE_CLIENT_ID` setting is superseded.
 
 See [Google Sign-In Setup](./docs/GOOGLE_AUTH_SETUP.md) for authorized origins, local configuration, account linking, production cookie/proxy considerations, and testing. Existing accounts require password confirmation before Google can be linked; projects and password access are preserved.
@@ -94,7 +96,15 @@ AI payload tests inject a test-only provider; they do not prove live Gemini acce
 ### Deployment configuration
 - Vercel: root directory `client`, build `npm run build`, output `dist`; set `VITE_API_URL` to the Render API URL ending in `/api`. SPA rewrites are in `client/vercel.json`.
 - Render: `render.yaml` describes the API service; supply MongoDB Atlas URI, Gemini API key, and the exact deployed frontend origin. Bind `HOST=0.0.0.0` and use Render's assigned `PORT`.
-- Cloud services have not been created or deployed. Local development MongoDB is not a production database.
+- A Firebase project/web app exists, but frontend/API hosting has not been deployed. Local development MongoDB is not a production database.
+- Run `npm run check:deploy` for an offline check of hosted MongoDB, the production session secret, HTTPS origins, frontend API routing and enabled AI configuration. It never deploys, enables billing or prints secrets; the local setup currently reports four missing production configuration items. Existing dependency audit findings also remain a release blocker. Those production credentials/origins must come from the intended deployment account; local development settings are not substituted to make this check pass.
+
+### Saved content editing and export
+- Open any text/Markdown asset in the source library, click **Edit content**, then **Save changes**. Remix results use the same saved editor and reopen from the source library after reload.
+- Edits update the same asset and preserve its owner/project, MIME type, filename and exact UTF-8 content. A version conflict keeps your draft instead of silently overwriting another session's work; use **Reload saved version** when ready.
+- Editing is limited to nonempty content up to 60,000 UTF-8 bytes. Larger text assets remain previewable/exportable. Binary media cannot be edited through this endpoint.
+- Choose **Markdown (.md)** or **Plain text (.txt)** and **Download saved content**. Both formats export the exact saved text, preserving Markdown syntax rather than generating a rendered document. Save/discard unsaved edits before downloading. Requests require the normal app session and enforce ownership.
+- This adds persistent remix/text-asset editing, not chat-message editing, revision history, PDF exports, or project ZIP downloads.
 
 See [BUILD_STATUS.md](./BUILD_STATUS.md) for completed work, remaining requirements, and verification, and [docs/BUILD_DECISIONS.md](./docs/BUILD_DECISIONS.md) for resolutions of conflicting planning examples.
 
