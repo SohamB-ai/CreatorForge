@@ -293,7 +293,7 @@ function Landing() {
               THE MULTIMODAL CREATIVE WORKSPACE
             </div>
             <h1>
-              Many sources.<br />One creative<br /><span>direction.</span>
+              Many sources.{' '}<br />One creative{' '}<br /><span>direction.</span>
             </h1>
             <p>
               Your images, voice notes, videos, and briefs belong together. Bring them into one workspace, then turn what you have into what comes next.
