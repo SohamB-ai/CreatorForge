@@ -58,7 +58,7 @@ export function OrnateDivider({ glyph = '✶', className = '' }) {
     >
       <div
         ref={lineRef}
-        className="ornate-divider-line w-full h-[1px] bg-[var(--color-ink-black)] origin-center will-change-transform"
+        className="ornate-divider-line w-full h-[1px] bg-[var(--border)] origin-center will-change-transform"
       />
       <span
         ref={glyphRef}
