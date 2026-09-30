@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import { createApp } from '../server/src/app.js';
-import { BrandKit, Media, MediaRevision, Project } from '../server/src/models.js';
+import { BrandKit, Media, MediaRevision, Message, Project } from '../server/src/models.js';
 import { backfillProjectStorage, reconcileProjectStorage, supportsTransactions } from '../server/src/project-mutations.js';
 import { createMediaAnalysisWorker } from '../server/src/media-analysis.js';
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 let database, server, base, app, token, stranger, project;
 let providerMode = 'normal';
+let remixStarted, remixRelease;
 const generated = [];
 const fixture = {
   'text/plain': Buffer.from('An evidence-backed story.'),
@@ -40,6 +42,7 @@ before(async () => {
   await mongoose.connect(database.getUri(), { dbName: 'backend-completion' });
   app = createApp({ jwtSecret: 'backend-completion-test-secret-at-least-thirty-two-characters', aiEnabled: true, geminiModel: 'gemini-test-model', generateContent: async (request) => {
     generated.push(request);
+    if (providerMode === 'hold-remix') { remixStarted(); await new Promise(resolve => { remixRelease = resolve; }); return { text: 'Late remix' }; }
     if (providerMode === 'quota') throw Object.assign(new Error('provider secret'), { status: 429 });
     if (providerMode === 'malformed') return { text: '{bad JSON' };
     if (request.contents.at(-1).parts.some(part => part.inlineData?.mimeType === 'application/pdf') && request.config.systemInstruction.includes('name, tone, audience')) return { text: JSON.stringify({ name: 'Test Brand', tone: 'Warm', audience: 'Readers', keywords: ['care'], colors: ['#123456'], guidelines: 'Be exact.' }) };
@@ -128,8 +131,20 @@ test('text revisions restore with version checks and PDF export has private head
   assert.equal(pdf.response.headers.get('cache-control'), 'private, no-store');
   assert.match(pdf.response.headers.get('content-disposition'), /\.pdf/);
   assert.equal(Buffer.from(pdf.data).subarray(0, 4).toString(), '%PDF');
+  const parsed = await getDocument({ data: new Uint8Array(pdf.data), useSystemFonts: true }).promise;
+  assert.match((await (await parsed.getPage(1)).getTextContent()).items.map(item => item.str).join(' '), /First/);
   const markdown = await call(`${endpoint}/export?format=markdown`);
   assert.equal(Buffer.from(markdown.data).toString(), '# First\nOriginal');
+  const longText = ['# Multipage export', ...Array.from({ length: 140 }, (_, index) => `- Item ${index + 1}: a readable line with [source](https://example.com/source) and <raw HTML>.`) ].join('\n');
+  assert.equal((await call(endpoint, { method: 'PATCH', body: { content: longText, version: 2 } })).status, 200);
+  const multipage = await call(`${endpoint}/export?format=pdf`);
+  const pages = await getDocument({ data: new Uint8Array(multipage.data), useSystemFonts: true }).promise;
+  assert.ok(pages.numPages >= 2);
+  const firstPage = await pages.getPage(1);
+  const rendered = (await firstPage.getTextContent()).items.map(item => item.str).join(' ');
+  assert.match(rendered, /Multipage export/);
+  assert.match(rendered, /<raw HTML>/);
+  assert.ok((await firstPage.getAnnotations()).some(item => item.url === 'https://example.com/source'));
   await call(endpoint, { method: 'DELETE' });
   assert.equal(await MediaRevision.countDocuments({ mediaId: asset._id }), 0);
 });
@@ -181,6 +196,29 @@ test('one lease claims an asset and deletion during analysis cannot recreate it'
   release();
   assert.equal(await first, true);
   assert.equal(await Media.countDocuments({ _id: asset._id }), 0);
+});
+
+test('failed transactional cascade rolls back and deletion during generation leaves no orphan output', async () => {
+  const isolated = (await call('/projects', { method: 'POST', body: { name: 'Cascade fixture' } })).data;
+  const owner = (await Project.findById(isolated._id)).userId;
+  const source = await Media.create({ userId: owner, projectId: isolated._id, name: 'source.txt', type: 'text', mimeType: 'text/plain', size: 5, data: Buffer.from('Facts').toString('base64') });
+  await reconcileProjectStorage(isolated._id);
+  const original = Message.deleteMany;
+  Message.deleteMany = async () => { throw new Error('Simulated cascade interruption'); };
+  try { assert.equal((await call(`/projects/${isolated._id}`, { method: 'DELETE' })).status, 500); }
+  finally { Message.deleteMany = original; }
+  assert.ok(await Project.exists({ _id: isolated._id }));
+  assert.ok(await Media.exists({ _id: source._id }));
+  let begin;
+  const started = new Promise(resolve => { begin = resolve; });
+  remixStarted = begin;
+  providerMode = 'hold-remix';
+  const generation = call('/remix', { method: 'POST', body: { projectId: isolated._id, mediaId: source.id, format: 'Summary' } });
+  await started;
+  try { assert.equal((await call(`/projects/${isolated._id}`, { method: 'DELETE' })).status, 204); }
+  finally { remixRelease(); providerMode = 'normal'; }
+  assert.equal((await generation).status, 404);
+  assert.equal(await Media.countDocuments({ projectId: isolated._id }), 0);
 });
 
 test('twenty prior text versions are retained and project deletion cleans snapshots', async () => {

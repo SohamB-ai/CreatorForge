@@ -124,3 +124,22 @@ test('saved text exports PDF, restores a prior version, and shows source analysi
   await request.delete(`/api/projects/${fixture.project._id}`, { headers: fixture.headers });
 });
 
+test('brand PDF draft remains unsaved until review and explicit save', async ({ page, request }, info) => {
+  const fixture = await prepare(page, request, `brand-${info.project.name}`);
+  const uploaded = await request.post(`/api/projects/${fixture.project._id}/media`, { headers: fixture.headers, multipart: { file: { name: 'brand.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF') } } });
+  expect(uploaded.status()).toBe(201);
+  const pdf = await uploaded.json();
+  await page.route('**/api/brand-kit/import', route => route.fulfill({ json: { sourceMediaId: pdf._id, draft: { name: 'Reviewed brand', tone: 'Warm', audience: 'Researchers', keywords: ['care'], colors: ['#123456'], guidelines: 'Use evidence.' } } }));
+  await page.goto('/settings/brandkit');
+  await page.getByLabel('Project for brand PDF').selectOption(fixture.project._id);
+  await page.getByLabel('Brand PDF source').selectOption(pdf._id);
+  await page.getByRole('button', { name: 'Extract draft' }).click();
+  await expect(page.getByText(/Nothing has been saved yet/)).toBeVisible();
+  await expect(page.getByLabel('Publication / Brand name')).toHaveValue('Reviewed brand');
+  await expect(page.getByLabel('Publication / Brand name')).toBeFocused();
+  expect((await (await request.get('/api/brand-kit', { headers: fixture.headers })).json()).name).not.toBe('Reviewed brand');
+  await page.getByRole('button', { name: 'Save brand manual' }).click();
+  await expect.poll(async () => (await (await request.get('/api/brand-kit', { headers: fixture.headers })).json()).name).toBe('Reviewed brand');
+  await request.delete(`/api/projects/${fixture.project._id}`, { headers: fixture.headers });
+});
+

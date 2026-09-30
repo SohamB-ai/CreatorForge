@@ -1389,6 +1389,7 @@ function BrandSettings() {
   const [draftSource, setDraftSource] = useState('');
   const [formRevision, setFormRevision] = useState(0);
   const [logoUrl, setLogoUrl] = useState('');
+  const brandNameInput = useRef(null);
 
   useEffect(() => {
     api.get('/brand-kit')
@@ -1416,6 +1417,7 @@ function BrandSettings() {
     }).catch(() => {});
     return () => { active = false; if (url) URL.revokeObjectURL(url); };
   }, [brand.logo?.updatedAt]);
+  useEffect(() => { if (formRevision) brandNameInput.current?.focus(); }, [formRevision]);
 
   async function importBrand() {
     if (!importProject || !importMedia) return;
@@ -1495,6 +1497,7 @@ function BrandSettings() {
 
               <Field label="Publication / Brand name">
                 <input
+                  ref={brandNameInput}
                   name="name"
                   defaultValue={brand.name}
                   maxLength={100}
