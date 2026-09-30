@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- Background & Glow Filters -->
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FF5E1E" stop-opacity="0.18" />
+      <stop offset="60%" stop-color="#8B5CF6" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#09090B" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Sword Steel Gradient -->
+    <linearGradient id="swordBlade" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="35%" stop-color="#E2E8F0" />
+      <stop offset="70%" stop-color="#94A3B8" />
+      <stop offset="100%" stop-color="#475569" />
+    </linearGradient>
+
+    <linearGradient id="swordFuller" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#6366F1" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#1E1B4B" stop-opacity="0.3" />
+    </linearGradient>
+
+    <linearGradient id="swordHilt" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="50%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#78350F" />
+    </linearGradient>
+
+    <!-- Pen Gold & Forge Gradient -->
+    <linearGradient id="penNib" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF5E1E" />
+      <stop offset="45%" stop-color="#FFAA00" />
+      <stop offset="70%" stop-color="#FDE047" />
+      <stop offset="100%" stop-color="#FFFFFF" />
+    </linearGradient>
+
+    <linearGradient id="penBody" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1E1B4B" />
+      <stop offset="50%" stop-color="#312E81" />
+      <stop offset="100%" stop-color="#4338CA" />
+    </linearGradient>
+
+    <linearGradient id="penAccent" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#FCD34D" />
+    </linearGradient>
+
+    <!-- Core Ambient Glow -->
+    <filter id="coreGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="subtleShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.65" />
+    </filter>
+  </defs>
+
+  <!-- Background Halo Aura -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGlow)" />
+
+  <!-- Outer Geometric Alignment Circles (Subtle Blueprint Lines) -->
+  <circle cx="256" cy="256" r="216" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="1.5" stroke-dasharray="4 8" />
+  <circle cx="256" cy="256" r="144" stroke="#FF5E1E" stroke-opacity="0.12" stroke-width="1.5" />
+  <circle cx="256" cy="256" r="72" stroke="#8B5CF6" stroke-opacity="0.15" stroke-width="1.5" />
+
+  <!-- Central Cross Axis Tick Marks -->
+  <line x1="256" y1="24" x2="256" y2="44" stroke="#FFAA00" stroke-opacity="0.4" stroke-width="2" stroke-linecap="round" />
+  <line x1="256" y1="468" x2="256" y2="488" stroke="#FFAA00" stroke-opacity="0.4" stroke-width="2" stroke-linecap="round" />
+  <line x1="24" y1="256" x2="44" y2="256" stroke="#FFAA00" stroke-opacity="0.4" stroke-width="2" stroke-linecap="round" />
+  <line x1="468" y1="256" x2="488" y2="256" stroke="#FFAA00" stroke-opacity="0.4" stroke-width="2" stroke-linecap="round" />
+
+  <!-- ========================================== -->
+  <!-- 1. SWORD (Diagonal: Top-Right to Bottom-Left) -->
+  <!-- ========================================== -->
+  <g transform="rotate(45 256 256)" filter="url(#subtleShadow)">
+    <!-- Blade Back / Outline -->
+    <path d="M256 36 L272 80 L270 330 L256 335 L242 330 L240 80 Z" fill="url(#swordBlade)" />
+    <!-- Left Blade Bevel (Darker Reflection) -->
+    <path d="M256 36 L242 80 L243 330 L256 335 Z" fill="#64748B" fill-opacity="0.35" />
+    <!-- Right Blade Bevel (Bright Highlight) -->
+    <path d="M256 36 L272 80 L271 330 L256 335 Z" fill="#FFFFFF" fill-opacity="0.25" />
+
+    <!-- Central Glowing Fuller / Blood Groove -->
+    <line x1="256" y1="72" x2="256" y2="310" stroke="url(#swordFuller)" stroke-width="5" stroke-linecap="round" />
+    <line x1="256" y1="76" x2="256" y2="306" stroke="#38BDF8" stroke-width="2" stroke-linecap="round" filter="url(#coreGlow)" />
+
+    <!-- Crossguard (Quillons) -->
+    <path d="M208 335 C208 330, 224 332, 240 335 L272 335 C288 332, 304 330, 304 335 C304 345, 290 350, 274 347 L238 347 C222 350, 208 345, 208 335 Z" fill="url(#swordHilt)" stroke="#FDE047" stroke-width="1.5" />
+    <!-- Crossguard Center Gem / Core Rivet -->
+    <circle cx="256" cy="341" r="5" fill="#38BDF8" stroke="#FFFFFF" stroke-width="1.5" />
+
+    <!-- Grip / Handle -->
+    <rect x="250" y="347" width="12" height="78" rx="3" fill="#1E293B" stroke="#475569" stroke-width="1" />
+    <!-- Handle Wire Wrap Accents -->
+    <line x1="250" y1="362" x2="262" y2="362" stroke="#F59E0B" stroke-width="2" />
+    <line x1="250" y1="378" x2="262" y2="378" stroke="#F59E0B" stroke-width="2" />
+    <line x1="250" y1="394" x2="262" y2="394" stroke="#F59E0B" stroke-width="2" />
+    <line x1="250" y1="410" x2="262" y2="410" stroke="#F59E0B" stroke-width="2" />
+
+    <!-- Pommel (Octagonal Counterweight) -->
+    <polygon points="256,428 266,434 266,448 256,454 246,448 246,434" fill="url(#swordHilt)" stroke="#FDE047" stroke-width="1.5" />
+    <circle cx="256" cy="441" r="3" fill="#FF5E1E" />
+  </g>
+
+  <!-- ========================================== -->
+  <!-- 2. PEN (Diagonal: Top-Left to Bottom-Right) -->
+  <!-- ========================================== -->
+  <g transform="rotate(-45 256 256)" filter="url(#subtleShadow)">
+    <!-- Pen Barrel (Body) -->
+    <path d="M243 210 L269 210 L273 420 C273 430, 266 438, 256 438 C246 438, 239 430, 239 420 Z" fill="url(#penBody)" stroke="#6366F1" stroke-width="1.5" />
+    <!-- Barrel Specular Reflection -->
+    <path d="M259 212 L266 212 L270 418 C270 424, 267 430, 262 433 Z" fill="#FFFFFF" fill-opacity="0.16" />
+
+    <!-- Barrel Trim Bands (Gold Rings) -->
+    <rect x="241" y="210" width="30" height="7" rx="1.5" fill="url(#penAccent)" stroke="#FEF08A" stroke-width="1" />
+    <rect x="243" y="222" width="26" height="3" rx="1" fill="url(#penAccent)" />
+
+    <!-- Pen Grip Section -->
+    <path d="M243 158 L269 158 L271 210 L241 210 Z" fill="#0F172A" stroke="#334155" stroke-width="1.5" />
+
+    <!-- Front Collar Ring -->
+    <rect x="244" y="153" width="24" height="5" rx="1" fill="url(#penAccent)" stroke="#FEF08A" stroke-width="1" />
+
+    <!-- Fountain Nib -->
+    <path d="M245 153 C245 130, 232 110, 245 74 L256 36 L267 74 C280 110, 267 130, 267 153 Z" fill="url(#penNib)" stroke="#FDE047" stroke-width="1.5" />
+
+    <!-- Nib Left Wing Shading -->
+    <path d="M245 153 C245 130, 232 110, 245 74 L256 36 L256 153 Z" fill="#B45309" fill-opacity="0.25" />
+
+    <!-- Nib Breather Hole & Center Slit -->
+    <line x1="256" y1="36" x2="256" y2="108" stroke="#1E1B4B" stroke-width="2.5" stroke-linecap="round" />
+    <line x1="256" y1="36" x2="256" y2="108" stroke="#FF5E1E" stroke-width="1" stroke-linecap="round" filter="url(#coreGlow)" />
+    <circle cx="256" cy="110" r="5" fill="#1E1B4B" stroke="#FEF08A" stroke-width="1.5" />
+
+    <!-- Nib Scrollwork Engraving (Classic Luxury Fountain Pen Crest) -->
+    <path d="M250 92 C247 100, 247 122, 252 136" fill="none" stroke="#FDE047" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="2 3" />
+    <path d="M262 92 C265 100, 265 122, 260 136" fill="none" stroke="#FDE047" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="2 3" />
+
+    <!-- Pen Pocket Clip (Refined Geometric Silhouette) -->
+    <path d="M253 235 L259 235 L261 360 C261 366, 256 370, 253 368 Z" fill="url(#penAccent)" stroke="#FEF08A" stroke-width="1" />
+  </g>
+
+  <!-- ========================================== -->
+  <!-- 3. CENTRAL ENERGY FUSION SPARK (The Nexus) -->
+  <!-- ========================================== -->
+  <g transform="translate(256, 256)">
+    <!-- Intersection Spark Rings -->
+    <circle cx="0" cy="0" r="16" fill="none" stroke="#FFAA00" stroke-width="2" stroke-opacity="0.6" stroke-dasharray="3 3" />
+    <circle cx="0" cy="0" r="8" fill="#FF5E1E" fill-opacity="0.4" filter="url(#coreGlow)" />
+    <circle cx="0" cy="0" r="4" fill="#FFFFFF" />
+
+    <!-- 4-Point Radiant Forge Flare -->
+    <path d="M0 -22 L3 -7 L18 0 L3 7 L0 22 L-3 7 L-18 0 L-3 -7 Z" fill="#FFFFFF" filter="url(#coreGlow)" />
+    <path d="M0 -28 L2 -8 L22 0 L2 8 L0 28 L-2 8 L-22 0 L-2 -8 Z" fill="#FFAA00" fill-opacity="0.4" />
+  </g>
+</svg>

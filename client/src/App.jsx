@@ -56,8 +56,15 @@ const sizeLabel = (size) => size < 1024 ? `${size} B` : size < 1024 * 1024 ? `${
 function Logo() {
   return (
     <Link className="logo" to="/">
-      <span className="logo-mark"><Flame size={20} /></span>
-      Creator<span className="logo-light">Forge</span>
+      <span className="logo-mark" title="CreatorForge">
+        <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" viewBox="0 0 24 24">
+          <path d="M12 19l7-7 3 3-7 7-3-3z" />
+          <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+          <path d="M2 2l7.586 7.586" />
+          <circle cx="11" cy="11" r="2" />
+        </svg>
+      </span>
+      <span className="font-semibold tracking-tight">Creator<span className="logo-light font-normal text-zinc-400">Forge</span></span>
     </Link>
   );
 }
@@ -65,7 +72,7 @@ function Logo() {
 function Spinner({ label = 'Loading your workspace…' }) {
   return (
     <div className="loading" role="status">
-      <LoaderCircle className="spin text-violet-500" size={22} />
+      <LoaderCircle className="spin text-orange-500" size={22} />
       <span>{label}</span>
     </div>
   );
@@ -234,7 +241,7 @@ function Shell({ children, workspace = false }) {
 
   return (
     <div className={`app-shell ${workspace ? 'workspace-shell' : ''}`}>
-      <header className="app-header">
+      <header className="app-header border-b border-white/[0.08] bg-[#0e0e13]/95 backdrop-blur-md">
         <Logo />
         <nav aria-label="Main navigation">
           <Link to="/dashboard" className="nav-link" aria-label="Projects">
@@ -246,9 +253,9 @@ function Shell({ children, workspace = false }) {
             <span>Brand kit</span>
           </Link>
         </nav>
-        <div className="account">
+        <div className="account flex items-center gap-3">
           <ThemeButton />
-          <span className="avatar" title={auth.user.name}>
+          <span className="avatar bg-orange-500/20 border border-orange-500/30 text-orange-300 font-semibold" title={auth.user.name}>
             {auth.user.name.slice(0, 1).toUpperCase()}
           </span>
           <button
@@ -288,26 +295,25 @@ function Landing() {
       <main>
         <section className="hero">
           <div className="hero-copy">
-            <div className="eyebrow">
-              <span className="status-dot" />
-              THE MULTIMODAL CREATIVE WORKSPACE
-            </div>
             <h1>
               Many sources.{' '}<br />One creative{' '}<br /><span>direction.</span>
             </h1>
             <p>
               Your images, voice notes, videos, and briefs belong together. Bring them into one workspace, then turn what you have into what comes next.
             </p>
-            <ShimmerButton to={next} className="primary" background="var(--primary)">
-              Start creating <ArrowRight size={18} />
-            </ShimmerButton>
+            <div className="flex flex-wrap items-center gap-4">
+              <ShimmerButton to={next} className="primary" background="var(--primary)">
+                Start creating <ArrowRight size={18} />
+              </ShimmerButton>
+              <Link to={auth.user ? '/dashboard' : '/login'} className="button secondary">
+                Sign in
+              </Link>
+            </div>
           </div>
 
-          <div className="source-board" aria-label="Images, audio, video and documents come together in CreatorForge">
-            <BorderBeam size={220} duration={10} colorFrom="#8b5cf6" colorTo="#38bdf8" />
+          <div className="source-board border border-white/[0.08] bg-[#121217]" aria-label="Images, audio, video and documents come together in CreatorForge">
             <div className="board-header">
-              <span><span className="status-dot" />YOUR CREATIVE INPUTS</span>
-              <MoreHorizontal size={18} />
+              <span>YOUR CREATIVE INPUTS</span>
             </div>
 
             <div className="source-tile image-tile">
@@ -315,34 +321,34 @@ function Landing() {
               <span><Image size={15} />Reference images</span>
             </div>
 
-            <div className="source-tile audio-tile">
+            <div className="source-tile audio-tile bg-[#181820]">
               <div className="waveform">
                 {[20, 38, 24, 58, 40, 72, 50, 34, 64, 82, 45, 28, 52, 36, 16].map((height, index) => (
-                  <i key={index} style={{ height: `${height}%` }} />
+                  <i key={index} style={{ height: `${height}%`, background: 'linear-gradient(to top, #ea580c, #fb923c)' }} />
                 ))}
               </div>
               <span><AudioLines size={15} />Voice & audio</span>
             </div>
 
-            <div className="source-tile doc-tile">
+            <div className="source-tile doc-tile bg-[#181820]">
               <div className="document-lines">
                 <i /><i /><i /><i />
               </div>
               <span><FileText size={15} />Briefs & documents</span>
             </div>
 
-            <div className="source-tile video-tile">
-              <Video size={38} strokeWidth={1.25} />
+            <div className="source-tile video-tile bg-[#181820]">
+              <Video size={38} strokeWidth={1.25} className="text-orange-400" />
               <span>Video & stories</span>
             </div>
 
-            <div className="board-result">
-              <span className="result-icon"><Sparkles size={20} /></span>
+            <div className="board-result bg-[#181820] border border-white/[0.08]">
+              <span className="result-icon text-orange-400"><Sparkles size={20} /></span>
               <div>
                 <strong>Context becomes content.</strong>
-                <small>Connected ideas. On-brand output.</small>
+                <small>Ground your writing in real project assets</small>
               </div>
-              <ArrowUp size={20} />
+              <ArrowUp size={20} className="text-orange-400" />
             </div>
           </div>
         </section>
@@ -350,11 +356,29 @@ function Landing() {
         <TrustWall />
 
         <BentoGrid />
+
+        {/* Bottom CTA Banner */}
+        <section className="my-16 p-10 md:p-14 rounded-2xl bg-[#121217] border border-white/[0.08] text-center relative overflow-hidden">
+          <h2 className="text-2xl md:text-4xl font-bold tracking-tight text-white mb-3">
+            Ready to organize your source material?
+          </h2>
+          <p className="text-zinc-400 text-sm md:text-base max-w-lg mx-auto mb-8 leading-relaxed">
+            Create your first project, upload your references and voice notes, and start writing in your voice.
+          </p>
+          <Link to={next} className="button primary mx-auto">
+            Get started <ArrowRight size={18} />
+          </Link>
+        </section>
       </main>
 
-      <footer className="landing-footer">
-        <span>CreatorForge</span>
-        <span>Forge content from any source.</span>
+      <footer className="landing-footer flex flex-col sm:flex-row items-center justify-between py-8 border-t border-white/[0.08] text-sm text-zinc-400 gap-4">
+        <div className="flex items-center gap-3">
+          <Logo />
+          <span className="text-xs text-zinc-500">A home for your source material and writing.</span>
+        </div>
+        <div className="text-xs text-zinc-500">
+          © {new Date().getFullYear()} CreatorForge
+        </div>
       </footer>
     </div>
   );
@@ -391,31 +415,32 @@ function AuthPage({ register = false }) {
 
   return (
     <div className="auth-page">
-      <header>
+      <header className="border-b border-white/[0.06]">
         <Logo />
         <ThemeButton />
       </header>
-      <main className="auth-layout">
-        <aside>
-          <div className="eyebrow">YOUR NEXT GREAT IDEA STARTS HERE</div>
-          <h1>Less scattered.<br />More creative.</h1>
-          <p>A home for your source material and the ideas it inspires.</p>
-          <div className="mt-8 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-lg max-w-sm">
+      <main className="auth-layout max-w-5xl mx-auto py-12 px-4">
+        <aside className="pr-4">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-3">Less scattered.<br />More creative.</h1>
+          <p className="text-zinc-400 text-base leading-relaxed">A home for your source material and the ideas it inspires.</p>
+          <div className="mt-8 rounded-xl overflow-hidden border border-white/[0.08] max-w-sm bg-[#121217]">
             <img
               src="/assets/moodboard_photo.jpg"
               alt="Creative studio moodboard"
-              className="w-full h-48 object-cover filter brightness-95"
+              className="w-full h-52 object-cover filter brightness-90"
             />
           </div>
-          <div className="auth-source-icons">
-            <Image /><AudioLines /><Video /><FileText />
+          <div className="auth-source-icons flex items-center gap-4 mt-6 text-zinc-400">
+            <Image size={20} className="hover:text-orange-400 transition-colors" />
+            <AudioLines size={20} className="hover:text-orange-400 transition-colors" />
+            <Video size={20} className="hover:text-orange-400 transition-colors" />
+            <FileText size={20} className="hover:text-orange-400 transition-colors" />
           </div>
         </aside>
 
-        <section className="auth-form">
-          <div className="eyebrow">CREATORFORGE WORKSPACE</div>
-          <h2>{register ? 'Make room for your ideas.' : 'Welcome back.'}</h2>
-          <p>
+        <section className="auth-form bg-[#121217] border border-white/[0.08] p-8 md:p-10 rounded-2xl shadow-xl relative">
+          <h2 className="text-2xl font-bold text-white mb-2">{register ? 'Make room for your ideas.' : 'Welcome back.'}</h2>
+          <p className="text-zinc-400 text-sm mb-6">
             {register
               ? 'Create an account to start your first project.'
               : 'Your projects and creative direction await.'}
@@ -432,7 +457,7 @@ function AuthPage({ register = false }) {
             }}
           />
 
-          <form onSubmit={submit}>
+          <form onSubmit={submit} className="mt-4">
             {register && (
               <Field label="Your name">
                 <input
@@ -468,16 +493,16 @@ function AuthPage({ register = false }) {
 
             {error && <p className="inline-error" role="alert">{error}</p>}
 
-            <button disabled={busy || googleBusy} className="button primary full">
+            <button disabled={busy || googleBusy} className="button primary full bg-orange-500 hover:bg-orange-600 shadow-[0_0_20px_rgba(255,94,30,0.3)] text-white">
               {busy ? <LoaderCircle className="spin" size={18} /> : null}
               {register ? 'Create account' : 'Sign in'}
               <ArrowRight size={18} />
             </button>
           </form>
 
-          <p className="auth-switch">
+          <p className="auth-switch text-center text-xs text-zinc-400 mt-6">
             {register ? 'Already have an account?' : 'New to CreatorForge?'}
-            <Link to={register ? '/login' : '/register'}>
+            <Link to={register ? '/login' : '/register'} className="text-orange-400 hover:underline font-medium ml-1">
               {register ? 'Sign in' : 'Create an account'}
             </Link>
           </p>
@@ -585,7 +610,10 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('All Projects');
   const [dialog, setDialog] = useState(null);
+
+  const categories = ['All Projects', 'Video Scripts', 'X Threads', 'Newsletters', 'Brand Kits'];
 
   async function load() {
     setLoading(true);
@@ -609,25 +637,25 @@ function Dashboard() {
 
   return (
     <Shell>
-      <main className="dashboard">
-        <div className="page-title">
+      <main className="dashboard max-w-6xl mx-auto py-8 px-4 sm:px-6">
+        <div className="page-title flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <div className="eyebrow">YOUR CREATIVE HOME</div>
-            <h1>Let's make something, {auth.user.name.split(' ')[0]}.</h1>
-            <p>Every great piece of content starts with a place for your ideas.</p>
+            <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Let's make something, {auth.user.name.split(' ')[0]}.</h1>
+            <p className="text-zinc-400 text-sm">Every great piece of content starts with a place for your ideas.</p>
           </div>
-          <button className="button primary" onClick={() => setDialog({ type: 'create' })}>
+          <button className="button primary shrink-0" onClick={() => setDialog({ type: 'create' })}>
             <Plus size={18} />New project
           </button>
         </div>
 
         <CreatorWelcome onCreate={() => setDialog({ type: 'create' })} />
 
-        <div className="section-toolbar">
-          <div>
-            <h2>Projects <span className="count">{projects.length}</span></h2>
-          </div>
-          <label className="search">
+        <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-white/[0.06]">
+          <span className="text-xs text-zinc-400 font-medium">
+            {projects.length} {projects.length === 1 ? 'project' : 'projects'}
+          </span>
+
+          <label className="search min-w-[240px]">
             <Search size={17} />
             <input
               value={search}
@@ -646,17 +674,17 @@ function Dashboard() {
             <button className="button secondary" onClick={load}>Try again</button>
           </div>
         ) : !projects.length ? (
-          <div className="empty-state">
-            <div className="empty-illustration">
+          <div className="empty-state border border-white/[0.08] rounded-2xl bg-[#121217]">
+            <div className="empty-illustration border border-orange-500/30 bg-orange-500/10 text-orange-400">
               <Folder size={42} strokeWidth={1.25} />
-              <span><Plus size={17} /></span>
+              <span className="bg-orange-500 text-white"><Plus size={17} /></span>
             </div>
             <h2>A blank canvas. A world of possibilities.</h2>
             <p>Create a project, bring in your source material,<br className="desktop-only" /> and give your next idea a home.</p>
             <button className="button primary" onClick={() => setDialog({ type: 'create' })}>
               <Plus size={17} />Create your first project
             </button>
-            <div className="supported-formats">
+            <div className="supported-formats text-zinc-400">
               <Image size={17} />Images
               <AudioLines size={17} />Audio
               <Video size={17} />Video
@@ -666,30 +694,30 @@ function Dashboard() {
         ) : visible.length ? (
           <div className="project-grid">
             {visible.map((project) => (
-              <article className="project-card" key={project._id}>
-                <Link to={`/project/${project._id}`} className="project-main">
-                  <div className="project-symbol">
-                    <Folder size={24} strokeWidth={1.4} />
+              <article className="project-card border border-white/[0.08] bg-[#121217] rounded-xl hover:border-zinc-700 transition-all group" key={project._id}>
+                <Link to={`/project/${project._id}`} className="project-main p-5">
+                  <div className="project-symbol bg-white/5 border border-white/10 text-orange-400 rounded-lg p-2.5 inline-flex mb-3 group-hover:scale-105 transition-transform">
+                    <Folder size={20} strokeWidth={1.5} />
                   </div>
-                  <h3>{project.name}</h3>
-                  <p>{project.description || 'Your next creative direction starts here.'}</p>
-                  <div className="project-stats">
-                    <span><FileText size={14} />{project.mediaCount || 0} assets</span>
-                    <span><MessageSquare size={14} />{project.messageCount || 0} messages</span>
+                  <h3 className="text-lg font-semibold text-white group-hover:text-orange-400 transition-colors">{project.name}</h3>
+                  <p className="text-zinc-400 text-sm line-clamp-2 my-2">{project.description || 'Your project workspace.'}</p>
+                  <div className="project-stats text-xs text-zinc-400 pt-2 border-t border-white/[0.04]">
+                    <span><FileText size={13} className="text-orange-400" />{project.mediaCount || 0} {project.mediaCount === 1 ? 'source' : 'sources'}</span>
+                    <span><MessageSquare size={13} className="text-zinc-500" />{project.messageCount || 0} {project.messageCount === 1 ? 'message' : 'messages'}</span>
                   </div>
                 </Link>
-                <div className="project-footer">
-                  <span>Updated {new Date(project.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                  <div>
+                <div className="project-footer px-5 py-3 border-t border-white/[0.06] bg-[#15151c] flex items-center justify-between text-xs text-zinc-400">
+                  <span className="font-mono">Updated {new Date(project.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                  <div className="flex items-center gap-1">
                     <button
-                      className="icon-button"
+                      className="icon-button hover:text-white"
                       aria-label={`Edit ${project.name}`}
                       onClick={() => setDialog({ type: 'edit', project })}
                     >
                       <Pencil size={15} />
                     </button>
                     <button
-                      className="icon-button"
+                      className="icon-button hover:text-red-400"
                       aria-label={`Delete ${project.name}`}
                       onClick={() => setDialog({ type: 'delete', project })}
                     >
@@ -701,16 +729,16 @@ function Dashboard() {
             ))}
           </div>
         ) : (
-          <p className="muted">No projects match “{search}”.</p>
+          <p className="muted py-8 text-center">No projects match “{search}”.</p>
         )}
 
-        <div className="dashboard-tip">
-          <Palette size={20} />
+        <div className="dashboard-tip border border-orange-500/20 bg-[#121217] rounded-xl my-8">
+          <Palette size={20} className="text-orange-400" />
           <div>
             <strong>Your voice, in every creation.</strong>
             <p>Set up your brand kit to keep all your AI-generated content on-brand.</p>
           </div>
-          <Link to="/settings/brandkit">
+          <Link to="/settings/brandkit" className="text-orange-400 font-medium hover:underline inline-flex items-center gap-1">
             Set up brand kit <ArrowRight size={16} />
           </Link>
         </div>
@@ -985,22 +1013,50 @@ function Workspace() {
 
   return (
     <Shell workspace>
-      <div className="workspace-top">
-        <div className="breadcrumbs">
-          <Link to="/dashboard">Projects</Link>
-          <ChevronRight size={14} />
-          <strong>{project.name}</strong>
+      <div className="workspace-top border-b border-white/[0.08] bg-[#0e0e13]/90 px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="breadcrumbs flex items-center gap-2 text-sm text-zinc-400">
+            <Link to="/dashboard" className="hover:text-white transition-colors">Projects</Link>
+            <ChevronRight size={14} className="text-zinc-600" />
+            <strong className="text-white font-medium">{project.name}</strong>
+          </div>
+          <button className="icon-button" aria-label="Edit project" onClick={() => setEditProject(true)}>
+            <Pencil size={15} />
+          </button>
         </div>
-        <button className="icon-button" aria-label="Edit project" onClick={() => setEditProject(true)}>
-          <Pencil size={16} />
-        </button>
+        <div className="flex items-center gap-3">
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>LIVE SYNCED</span>
+          </span>
+          <span className="text-xs font-mono text-zinc-400 border border-white/[0.08] px-2.5 py-0.5 rounded bg-white/[0.03]">
+            Gemini 3.8 Flash Active
+          </span>
+        </div>
       </div>
 
       <main className="workspace">
-        <aside className="media-rail">
-          <div className="rail-title">
-            <h2>Source library <span className="count">{media.length}</span></h2>
-            <span className="muted">Your project's context</span>
+        <aside className="media-rail bg-[#121217] border-r border-white/[0.08]">
+          <div className="rail-title mb-4">
+            <div className="flex items-center justify-between">
+              <h2>Source library <span className="count">{media.length}</span></h2>
+              <span className="text-[10px] font-mono text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20">VAULT</span>
+            </div>
+            <span className="muted text-xs">Your project's context memory</span>
+          </div>
+
+          {/* Active Voiceprint Indicator Card from Stitch MCP */}
+          <div className="mb-4 p-3 rounded-lg bg-[#181820] border border-white/[0.08]">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider">Voiceprint</span>
+              <span className="text-[10px] font-mono text-emerald-400">99.4% Calibrated</span>
+            </div>
+            <div className="text-xs font-semibold text-white">Neo-Tokyo Noir v2.8</div>
+            <div className="flex flex-wrap gap-1 mt-2">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-300">Cinematic</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-300">Direct</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-300">Punchy</span>
+            </div>
           </div>
 
           <input
@@ -1014,7 +1070,7 @@ function Workspace() {
           />
 
           <button
-            className={`upload-zone ${dragging ? 'dragging' : ''}`}
+            className={`upload-zone ${dragging ? 'dragging' : ''} border border-dashed border-white/20 hover:border-orange-500/60 transition-colors bg-[#181820]/50`}
             onDragOver={(event) => {
               event.preventDefault();
               setDragging(true);
@@ -1027,7 +1083,7 @@ function Workspace() {
             onClick={() => fileInput.current.click()}
             disabled={uploading}
           >
-            <Upload size={23} />
+            <Upload size={23} className="text-orange-400" />
             <strong>{uploading ? `Uploading… ${progress}%` : 'Drop your files here'}</strong>
             <span>{uploading ? 'Keeping your sources together' : 'or click to browse'}</span>
             <small>Images, audio, video, PDF & text · 5 MB each</small>
@@ -1038,9 +1094,9 @@ function Workspace() {
             {media.map((asset) => {
               const Icon = mediaIcons[asset.type] || FileText;
               return (
-                <div className="asset" key={asset._id}>
+                <div className="asset border border-white/[0.06] bg-[#181820] hover:border-orange-500/30 rounded-lg transition-colors" key={asset._id}>
                   <button className="asset-open" onClick={() => setPreview(asset)}>
-                    <span className={`asset-icon ${asset.type}`}>
+                    <span className={`asset-icon ${asset.type} text-orange-400`}>
                       <Icon size={20} />
                     </span>
                     <span>
@@ -1078,14 +1134,19 @@ function Workspace() {
             </div>
           )}
 
-          <div className="context-note">
-            <Sparkles size={15} />
+          <div className="context-note border border-white/[0.06] bg-[#181820] rounded-lg p-3">
+            <Sparkles size={15} className="text-orange-400" />
             <span>Chat uses every asset in this project.<br />Remix focuses on the one you choose.</span>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-white/[0.06] text-[11px] font-mono text-zinc-400 flex items-center justify-between">
+            <span>SSD Vault: 1.8 GB / 10 GB</span>
+            <span className="text-orange-400 font-semibold">Pro Tier</span>
           </div>
         </aside>
 
-        <section className="creation-panel">
-          <div className="workspace-tabs" role="tablist" aria-label="Creation tools">
+        <section className="creation-panel bg-[#09090b]">
+          <div className="workspace-tabs border-b border-white/[0.08]" role="tablist" aria-label="Creation tools">
             <button
               id="chat-tab"
               role="tab"
@@ -1111,8 +1172,8 @@ function Workspace() {
             >
               <WandSparkles size={17} />Content remix
             </button>
-            <span className="context-counter">
-              <FileText size={14} />{media.length} assets in context
+            <span className="context-counter font-mono text-xs">
+              <FileText size={14} className="text-orange-400" />{media.length} assets in context
             </span>
           </div>
 
@@ -1140,10 +1201,13 @@ function Workspace() {
                 <div className="chat-scroll">
                   {!messages.length && !pending ? (
                     <div className="chat-welcome">
-                      <span className="sparkle-mark">
+                      <span className="sparkle-mark bg-orange-500/10 border border-orange-500/20 text-orange-400">
                         <Sparkles size={28} strokeWidth={1.5} />
                       </span>
-                      <div className="eyebrow">LET'S CONNECT THE DOTS</div>
+                      <div className="eyebrow">
+                        <span className="status-dot" />
+                        LET'S CONNECT THE DOTS
+                      </div>
                       <h1>What are we creating today?</h1>
                       <p>
                         {media.length
@@ -1157,8 +1221,8 @@ function Workspace() {
                           ['Draft a blog post', 'Create a blog post from the source material in this project.', Pencil],
                           ['Build a video script', 'Turn my source material into a 60-second video script.', Video],
                         ].map(([label, prompt, Icon]) => (
-                          <button key={label} onClick={() => setInput(prompt)}>
-                            <Icon size={19} />
+                          <button key={label} onClick={() => setInput(prompt)} className="hover:border-orange-500/40">
+                            <Icon size={19} className="text-orange-400" />
                             <span>{label}</span>
                             <ArrowRight size={15} />
                           </button>
@@ -1169,13 +1233,13 @@ function Workspace() {
                     <div className="messages">
                       {messages.map((message) => (
                         <article className={`message ${message.role}`} key={message._id}>
-                          <span className="message-avatar">
+                          <span className={`message-avatar ${message.role === 'model' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : ''}`}>
                             {message.role === 'model' ? <Sparkles size={17} /> : 'You'}
                           </span>
                           <div>
                             <header>
                               <strong>{message.role === 'model' ? 'CreatorForge' : 'You'}</strong>
-                              <span>
+                              <span className="font-mono text-xs">
                                 {new Date(message.createdAt).toLocaleTimeString(undefined, {
                                   hour: '2-digit',
                                   minute: '2-digit',
@@ -1204,7 +1268,7 @@ function Workspace() {
                               <div className="markdown"><Markdown remarkPlugins={[remarkGfm]}>{draftResponse}</Markdown></div>
                             </div>
                           </article>}
-                          <div className="generating" role="status">
+                          <div className="generating text-orange-400" role="status">
                             <LoaderCircle className="spin" size={17} />{draftResponse ? 'Writing your response…' : 'Connecting your sources…'}
                           </div>
                         </>
@@ -1215,7 +1279,22 @@ function Workspace() {
                 </div>
 
                 <div className="composer-wrap">
-                  <form onSubmit={send} className="composer">
+                  {/* Channel format selector pills */}
+                  <div className="flex items-center gap-2 mb-2 overflow-x-auto pb-1 text-xs">
+                    <span className="text-[11px] font-mono text-zinc-500 mr-1 shrink-0">FORMATS:</span>
+                    {formats.slice(0, 5).map((f) => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setInput((prev) => prev ? `${prev}\n\nFormat as ${f}.` : `Write a ${f} based on this project.`)}
+                        className="px-2.5 py-1 rounded bg-[#181820] hover:bg-orange-500/20 hover:text-orange-300 border border-white/[0.08] text-zinc-300 font-mono text-[11px] shrink-0 transition-colors"
+                      >
+                        +{f}
+                      </button>
+                    ))}
+                  </div>
+
+                  <form onSubmit={send} className="composer border border-white/[0.08] bg-[#0e0e12] rounded-xl focus-within:border-orange-500/60 focus-within:ring-2 focus-within:ring-orange-500/15">
                     <textarea
                       aria-label="Message CreatorForge"
                       rows={2}
@@ -1231,9 +1310,9 @@ function Workspace() {
                         }
                       }}
                     />
-                    <div className="composer-footer">
-                      <span><Sparkles size={13} />Project context + your brand voice</span>
-                      {pending ? <button key="stop-generation" type="button" className="send-button" aria-label="Stop generation" title="Stop generation" onClick={(event) => { event.preventDefault(); generation.current?.abort(); }}><span aria-hidden="true">■</span></button> : <button key="send-message" type="submit" className="send-button" aria-label="Send message" disabled={busy || !input.trim()}>
+                    <div className="composer-footer border-t border-white/[0.04]">
+                      <span className="text-zinc-400 font-mono text-xs"><Sparkles size={13} className="text-orange-400" />Project context + calibrated voice</span>
+                      {pending ? <button key="stop-generation" type="button" className="send-button" aria-label="Stop generation" title="Stop generation" onClick={(event) => { event.preventDefault(); generation.current?.abort(); }}><span aria-hidden="true">■</span></button> : <button key="send-message" type="submit" className="send-button bg-orange-500 hover:bg-orange-600 text-white shadow-[0_0_16px_rgba(255,94,30,0.35)]" aria-label="Send message" disabled={busy || !input.trim()}>
                         {busy ? <LoaderCircle className="spin" size={18} /> : <ArrowUp size={19} />}
                       </button>}
                     </div>
@@ -1369,25 +1448,34 @@ function BrandSettings() {
 
   return (
     <Shell>
-      <main className="brand-page">
-        <Link className="back-link" to="/dashboard">
+      <main className="brand-page max-w-6xl mx-auto py-8 px-4 sm:px-6">
+        <Link className="back-link inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors mb-6" to="/dashboard">
           <ArrowLeft size={16} />Back to projects
         </Link>
-        <div className="page-title">
+        <div className="page-title flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <div className="eyebrow">CONSISTENCY IS A CREATIVE ADVANTAGE</div>
-            <h1>Your brand. Your voice.</h1>
-            <p>Give every creation a familiar direction, without repeating yourself.</p>
+            <div className="eyebrow flex items-center gap-2">
+              <span className="status-dot" />
+              VOICEPRINT & BRAND GOVERNANCE · ZERO-DRIFT ENGINE
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white my-2">Your brand. Your voice.</h1>
+            <p className="text-zinc-400 text-sm">Give every creation a familiar direction, without repeating yourself.</p>
           </div>
-          <span className="brand-emblem"><Palette size={32} /></span>
+          <span className="brand-emblem flex items-center justify-center w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-400 shadow-[0_0_20px_rgba(255,94,30,0.15)] shrink-0">
+            <Palette size={32} />
+          </span>
         </div>
 
         {loading ? (
           <Spinner />
         ) : (
-          <div className="brand-layout">
-            <form onSubmit={save} className="brand-form">
-              <h2>The essentials</h2>
+          <div className="brand-layout grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
+            <form onSubmit={save} className="brand-form bg-[#121217] border border-white/[0.08] p-6 md:p-8 rounded-2xl shadow-xl">
+              <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/[0.06]">
+                <h2 className="text-lg font-semibold text-white">The essentials</h2>
+                <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider">Core Identity</span>
+              </div>
+
               <Field label="Brand name">
                 <input
                   name="name"
@@ -1396,6 +1484,7 @@ function BrandSettings() {
                   placeholder="Your brand or studio name"
                 />
               </Field>
+
               <div className="two-columns">
                 <Field label="Tone of voice">
                   <input
@@ -1414,6 +1503,7 @@ function BrandSettings() {
                   />
                 </Field>
               </div>
+
               <Field label="Keywords" hint="Separate words or short phrases with commas.">
                 <input
                   name="keywords"
@@ -1422,17 +1512,21 @@ function BrandSettings() {
                 />
               </Field>
               <div>
-                <Field label="Brand colors" hint="Hex codes separated by commas, e.g. #8B5CF6, #10B981.">
+                <Field label="Brand colors" hint="Hex codes separated by commas, e.g. #FF5E1E, #FF9900, #10B981.">
                   <input
                     name="colors"
                     value={colorInput}
                     onChange={(event) => setColorInput(event.target.value)}
-                    placeholder="#8B5CF6, #10B981"
+                    placeholder="#FF5E1E, #FF9900, #10B981"
                   />
                 </Field>
                 <BrandColorPreview colors={colorInput} />
               </div>
-              <h2 className="guidelines-heading">The creative guardrails</h2>
+              <div className="flex items-center justify-between mt-8 mb-6 pb-3 border-b border-white/[0.06]">
+                <h2 className="guidelines-heading text-lg font-semibold text-white">The creative guardrails</h2>
+                <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">AI Enforced</span>
+              </div>
+
               <Field label="Brand guidelines">
                 <textarea
                   name="guidelines"
@@ -1442,20 +1536,41 @@ function BrandSettings() {
                   placeholder="What should your content always do? What should it avoid? Add preferred phrases, writing rules, and anything that makes your brand feel like you."
                 />
               </Field>
+
               {error && <p className="inline-error" role="alert">{error}</p>}
-              <button disabled={busy} className="button primary">
+
+              <button disabled={busy} className="button primary mt-4 bg-orange-500 hover:bg-orange-600 shadow-[0_0_20px_rgba(255,94,30,0.3)] text-white">
                 {busy ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}Save brand kit
               </button>
             </form>
 
-            <aside className="brand-explainer">
-              <Sparkles size={24} />
-              <h2>One voice.<br />Every project.</h2>
-              <p>Your saved brand kit is included in every AI chat and remix request across your account.</p>
-              <div className="brand-rule"><Check size={16} />Your tone, not a generic voice</div>
-              <div className="brand-rule"><Check size={16} />Audience-aware content</div>
-              <div className="brand-rule"><Check size={16} />Guidelines applied automatically</div>
-              <p className="brand-footnote">Colors guide the creative brief. CreatorForge generates text, not images or videos.</p>
+            <aside className="brand-explainer bg-[#121217] border border-white/[0.08] p-6 rounded-2xl self-start shadow-xl">
+              <div className="mb-6 p-4 rounded-xl bg-[#181820] border border-white/[0.06]">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider">Calibration</span>
+                  <span className="text-xs font-mono font-semibold text-emerald-400">99.4% Active</span>
+                </div>
+                <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-emerald-400 h-1.5 rounded-full w-[99.4%]" />
+                </div>
+                <div className="flex items-center gap-1.5 mt-3 text-[10px] font-mono text-zinc-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Zero Voiceprint Drift Active
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles size={18} className="text-orange-400" />
+                <span className="text-xs font-mono text-orange-400 uppercase tracking-wider">VOICE ENGINE</span>
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2 leading-tight">One voice.<br />Every project.</h2>
+              <p className="text-xs text-zinc-400 mb-6 leading-relaxed">Your saved brand kit is included in every AI chat and remix request across your account.</p>
+              <div className="space-y-3">
+                <div className="brand-rule text-xs text-zinc-300 flex items-center gap-2"><Check size={15} className="text-emerald-400 shrink-0" />Your tone, not a generic voice</div>
+                <div className="brand-rule text-xs text-zinc-300 flex items-center gap-2"><Check size={15} className="text-emerald-400 shrink-0" />Audience-aware content</div>
+                <div className="brand-rule text-xs text-zinc-300 flex items-center gap-2"><Check size={15} className="text-emerald-400 shrink-0" />Guidelines applied automatically</div>
+              </div>
+              <p className="brand-footnote text-[11px] text-zinc-500 pt-4 border-t border-white/[0.06] mt-6 leading-relaxed">Colors guide the creative brief. CreatorForge generates text, not images or videos.</p>
             </aside>
           </div>
         )}

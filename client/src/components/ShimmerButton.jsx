@@ -7,7 +7,7 @@ export function ShimmerButton({
   shimmerColor = '#ffffff',
   shimmerDuration = '3s',
   borderRadius = '8px',
-  background = 'rgba(124, 58, 237, 1)',
+  background = 'rgba(255, 94, 30, 1)',
   onClick,
   disabled,
   type = 'button',
