@@ -37,3 +37,22 @@ test('SSE parser cancels its reader on Stop even while waiting for bytes', async
   await assert.rejects(operation, { name: 'AbortError' });
   assert.equal(cancelled, true);
 });
+test('Stop does not wait for an unresponsive transport cancellation', async () => {
+  const controller = new AbortController();
+  const stream = new ReadableStream({ cancel() { return new Promise(() => {}); } });
+  const operation = readChatStream(stream, { signal: controller.signal, onDelta() {} });
+  controller.abort();
+  let deadline;
+  try {
+    await assert.rejects(Promise.race([operation, new Promise((resolve, reject) => { deadline = setTimeout(() => reject(new Error('Stop waited for transport cleanup')), 500); })]), { name: 'AbortError' });
+  } finally { clearTimeout(deadline); }
+});
+test('a confirmed reply does not wait for transport cancellation cleanup', async () => {
+  const text = 'Confirmed reply';
+  const stream = new ReadableStream({ start(controller) { controller.enqueue(encoded(frame('delta', { text }) + frame('done', completed(text)))); }, cancel() { return new Promise(() => {}); } });
+  let deadline;
+  try {
+    const result = await Promise.race([readChatStream(stream, { onDelta() {} }), new Promise((resolve, reject) => { deadline = setTimeout(() => reject(new Error('Completion waited for transport cleanup')), 500); })]);
+    assert.equal(result.assistantMessage.content, text);
+  } finally { clearTimeout(deadline); }
+});

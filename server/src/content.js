@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import mongoose from 'mongoose';
 import { Media, Message, Project } from './models.js';
+import { ensureStorage, withProjectMutation } from './project-mutations.js';
 
 export const MAX_EDIT_BYTES = 60000;
 const route = (handler) => (request, response, next) => Promise.resolve(handler(request, response)).catch(next);
@@ -9,7 +10,11 @@ const safeAsset = (asset) => { const result = asset.toObject(); delete result.da
 const ensureText = (asset) => { if (asset.type !== 'text') fail(415, 'Only text assets can be edited or exported as Markdown/text.'); };
 
 export function installContentRoutes(app, { ownedMedia, ownedProject }) {
-  app.post('/api/projects/:id/messages/:messageId/save', route(async (request, response) => {
+  const mutationRoute = (handler) => route(async (request, response) => {
+    const project = await ownedProject(request, request.params.id);
+    return withProjectMutation(project._id, request.user._id, () => handler(request, response));
+  });
+  app.post('/api/projects/:id/messages/:messageId/save', mutationRoute(async (request, response) => {
     const project = await ownedProject(request, request.params.id);
     z.object({}).strict().parse(request.body || {});
     if (!mongoose.isValidObjectId(request.params.messageId)) fail(404, 'Message not found.');
@@ -21,8 +26,7 @@ export function installContentRoutes(app, { ownedMedia, ownedProject }) {
     if (existing) return response.json(safeAsset(existing));
     const size = Buffer.byteLength(message.content, 'utf8');
     if (!message.content.trim() || size > MAX_EDIT_BYTES || message.content.includes('\0')) fail(400, 'Save a nonempty AI response within the 60 KB editing limit.');
-    const totals = await Media.aggregate([{ $match: { projectId: project._id } }, { $group: { _id: null, bytes: { $sum: '$size' } } }]);
-    if ((totals[0]?.bytes || 0) + size > 50 * 1024 * 1024) fail(413, 'This project has reached its 50 MB storage limit.');
+    await ensureStorage(project._id, size);
     await Media.init();
     let asset;
     try {
@@ -42,13 +46,12 @@ export function installContentRoutes(app, { ownedMedia, ownedProject }) {
     response.set('Cache-Control', 'private, no-store');
     response.json({ asset: safeAsset(asset), content: Buffer.from(asset.data, 'base64').toString('utf8'), version: asset.__v || 0, maxEditBytes: MAX_EDIT_BYTES });
   }));
-  app.patch('/api/projects/:id/media/:mediaId', route(async (request, response) => {
+  app.patch('/api/projects/:id/media/:mediaId', mutationRoute(async (request, response) => {
     const asset = await ownedMedia(request);
     ensureText(asset);
     const values = z.object({ content: z.string().min(1, 'Content cannot be empty.').max(MAX_EDIT_BYTES).refine((content) => Buffer.byteLength(content, 'utf8') <= MAX_EDIT_BYTES, 'Content exceeds the 60 KB editing limit.').refine((content) => !content.includes('\0'), 'Text cannot contain null bytes.'), version: z.number().int().nonnegative() }).strict().parse(request.body);
     const size = Buffer.byteLength(values.content, 'utf8');
-    const totals = await Media.aggregate([{ $match: { projectId: asset.projectId } }, { $group: { _id: null, bytes: { $sum: '$size' } } }]);
-    if ((totals[0]?.bytes || 0) - asset.size + size > 50 * 1024 * 1024) fail(413, 'This project has reached its 50 MB storage limit.');
+    await ensureStorage(asset.projectId, size, asset.size);
     const updated = await Media.findOneAndUpdate({ _id: asset._id, projectId: asset.projectId, userId: request.user._id, __v: values.version }, { $set: { data: Buffer.from(values.content, 'utf8').toString('base64'), size }, $inc: { __v: 1 } }, { new: true, runValidators: true });
     if (!updated) fail(409, 'This asset changed in another session. Reload the saved version before trying again; your draft is still available.');
     await Project.updateOne({ _id: asset.projectId, userId: request.user._id }, { $set: { updatedAt: new Date() } });

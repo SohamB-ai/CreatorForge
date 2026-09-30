@@ -2,6 +2,7 @@
   "name": "creatorforge",
   "private": true,
   "type": "module",
+  "engines": { "node": ">=24.21.0 <25" },
   "workspaces": ["client", "server"],
   "scripts": {
     "dev": "node scripts/dev.mjs",
@@ -13,11 +14,7 @@
     "start": "npm run start --workspace server"
   },
   "overrides": {
-    "@google-cloud/storage": {
-      "gaxios": {
-        "uuid": "^11.1.1"
-      }
-    }
+    "uuid": "11.1.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",

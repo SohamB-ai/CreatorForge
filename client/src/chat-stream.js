@@ -3,14 +3,19 @@ const streamError = (error) => Object.assign(new Error(error), { response: { dat
 export async function readChatStream(body, { signal, onDelta }) {
   const reader = body.getReader();
   const decoder = new TextDecoder('utf-8', { fatal: true });
-  const abort = () => { reader.cancel().catch(() => {}); };
+  let rejectAbort;
+  const aborted = new Promise((resolve, reject) => { rejectAbort = reject; });
+  const abort = () => {
+    rejectAbort(signal.reason || new DOMException('Generation cancelled.', 'AbortError'));
+    reader.cancel().catch(() => {});
+  };
   signal?.addEventListener('abort', abort, { once: true });
   let buffer = '';
   let content = '';
   try {
     while (true) {
       signal?.throwIfAborted();
-      const chunk = await reader.read();
+      const chunk = await Promise.race([reader.read(), aborted]);
       signal?.throwIfAborted();
       buffer += decoder.decode(chunk.value, { stream: !chunk.done });
       if (buffer.length > 256000) throw streamError('The response stream is too large. Try a shorter request.');
@@ -44,7 +49,7 @@ export async function readChatStream(body, { signal, onDelta }) {
     }
   } finally {
     signal?.removeEventListener('abort', abort);
-    await reader.cancel().catch(() => {});
+    reader.cancel().catch(() => {});
     reader.releaseLock();
   }
 }

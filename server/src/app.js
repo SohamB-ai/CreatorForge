@@ -14,6 +14,7 @@ import { installContentRoutes } from './content.js';
 import { installChatStream } from './chat-stream.js';
 import { installOnboarding, skillIdsSchema, validateProjectSkills } from './onboarding.js';
 import { resolveProjectSkill } from './project-skills.js';
+import { ensureStorage, withProjectMutation } from './project-mutations.js';
 
 export const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const string = (maximum) => z.string().trim().max(maximum);
@@ -150,8 +151,10 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
   }));
   app.delete('/api/projects/:id', asyncRoute(async (request, response) => {
     const found = await ownedProject(request, request.params.id);
-    await Promise.all([Media.deleteMany({ projectId: found._id }), Message.deleteMany({ projectId: found._id })]);
-    await found.deleteOne();
+    await withProjectMutation(found._id, request.user._id, async () => {
+      await Promise.all([Media.deleteMany({ projectId: found._id }), Message.deleteMany({ projectId: found._id })]);
+      await found.deleteOne();
+    });
     response.status(204).end();
   }));
   app.get('/api/projects/:id/media', asyncRoute(async (request, response) => {
@@ -168,17 +171,19 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
     next();
   }), upload.single('file'), asyncRoute(async (request, response) => {
     validateFile(request.file);
-    const existingBytes = await Media.aggregate([{ $match: { projectId: request.project._id } }, { $group: { _id: null, total: { $sum: '$size' } } }]);
-    if ((existingBytes[0]?.total || 0) + request.file.size > 50 * 1024 * 1024) fail(413, 'This project has reached its 50 MB storage limit. Remove an asset first.');
-    const asset = await Media.create({
-      projectId: request.project._id, userId: request.user._id,
-      name: request.file.originalname.replace(/[\x00-\x1f\\/]/g, '_').slice(0, 200),
-      type: acceptedTypes.get(request.file.mimetype), mimeType: request.file.mimetype,
-      size: request.file.size, data: request.file.buffer.toString('base64'),
+    const result = await withProjectMutation(request.project._id, request.user._id, async () => {
+      await ensureStorage(request.project._id, request.file.size);
+      const asset = await Media.create({
+        projectId: request.project._id, userId: request.user._id,
+        name: request.file.originalname.replace(/[\x00-\x1f\\/]/g, '_').slice(0, 200),
+        type: acceptedTypes.get(request.file.mimetype), mimeType: request.file.mimetype,
+        size: request.file.size, data: request.file.buffer.toString('base64'),
+      });
+      await Project.updateOne({ _id: request.project._id }, { $set: { updatedAt: new Date() } });
+      const result = asset.toObject();
+      delete result.data;
+      return result;
     });
-    await Project.updateOne({ _id: request.project._id }, { $set: { updatedAt: new Date() } });
-    const result = asset.toObject();
-    delete result.data;
     response.status(201).json(result);
   }));
   app.get('/api/projects/:id/media/:mediaId/content', asyncRoute(async (request, response) => {
@@ -190,7 +195,7 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
   }));
   app.delete('/api/projects/:id/media/:mediaId', asyncRoute(async (request, response) => {
     const asset = await ownedMedia(request);
-    await asset.deleteOne();
+    await withProjectMutation(asset.projectId, request.user._id, () => asset.deleteOne());
     response.status(204).end();
   }));
   app.get('/api/projects/:id/messages', asyncRoute(async (request, response) => {
@@ -222,9 +227,19 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
       ]);
       const skill = resolveProjectSkill(found, values.skillId, media);
       const content = await generate({ project: found, media, history: history.reverse(), brand, prompt: values.message, skill });
-      const userMessage = await Message.create({ projectId: found._id, userId: request.user._id, role: 'user', content: values.message });
-      const assistantMessage = await Message.create({ projectId: found._id, userId: request.user._id, role: 'model', content });
-      return { userMessage, assistantMessage };
+      return withProjectMutation(found._id, request.user._id, async () => {
+        const identifiers = [new mongoose.Types.ObjectId(), new mongoose.Types.ObjectId()];
+        try {
+          const [userMessage, assistantMessage] = await Message.insertMany([
+            { _id: identifiers[0], projectId: found._id, userId: request.user._id, role: 'user', content: values.message },
+            { _id: identifiers[1], projectId: found._id, userId: request.user._id, role: 'model', content },
+          ]);
+          return { userMessage, assistantMessage };
+        } catch (failure) {
+          await Message.deleteMany({ _id: { $in: identifiers }, projectId: found._id });
+          throw failure;
+        }
+      });
     });
     response.json(result);
   }));
@@ -237,8 +252,12 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
     const result = await withProjectLock(found._id, async () => {
       const brand = await BrandKit.findOne({ userId: request.user._id }).select('-userId -_id -__v').lean();
       const content = await generate({ project: found, media: [source], history: [], brand, prompt: `Transform this source into a ${values.format}. ${values.instructions}` });
-      const asset = await Media.create({ projectId: found._id, userId: request.user._id, name: `${values.format} — ${source.name}`.slice(0, 200), type: 'text', mimeType: 'text/markdown', size: Buffer.byteLength(content), data: Buffer.from(content).toString('base64') });
-      return { content, mediaId: asset._id };
+      return withProjectMutation(found._id, request.user._id, async () => {
+        const size = Buffer.byteLength(content);
+        await ensureStorage(found._id, size);
+        const asset = await Media.create({ projectId: found._id, userId: request.user._id, name: `${values.format} — ${source.name}`.slice(0, 200), type: 'text', mimeType: 'text/markdown', size, data: Buffer.from(content).toString('base64') });
+        return { content, mediaId: asset._id };
+      });
     });
     response.json(result);
   }));
