@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import { z } from 'zod';
-import { User, Project, Media, Message, BrandKit } from './models.js';
+import { User, Project, Media, MediaRevision, Message, BrandKit, BrandLogo } from './models.js';
 import { createGenerator } from './ai.js';
 import { installGoogleAuth, isAllowedOrigin } from './google-auth.js';
 import { installStudio } from './studio.js';
@@ -154,7 +154,13 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
   app.delete('/api/projects/:id', asyncRoute(async (request, response) => {
     const found = await ownedProject(request, request.params.id);
     await withProjectMutation(found._id, request.user._id, async () => {
-      await Promise.all([Media.deleteMany({ projectId: found._id }), Message.deleteMany({ projectId: found._id }), StudioRequest.deleteMany({ runId: { $in: (await StudioRun.find({ projectId: found._id }).select("_id")).map(r => r._id) } }), StudioRevision.deleteMany({ projectId: found._id }), StudioRun.deleteMany({ projectId: found._id })]);
+      const runIds = (await StudioRun.find({ projectId: found._id }).select('_id')).map(run => run._id);
+      await StudioRequest.deleteMany({ runId: { $in: runIds } });
+      await StudioRevision.deleteMany({ projectId: found._id });
+      await StudioRun.deleteMany({ projectId: found._id });
+      await MediaRevision.deleteMany({ projectId: found._id });
+      await Media.deleteMany({ projectId: found._id });
+      await Message.deleteMany({ projectId: found._id });
       await found.deleteOne();
     });
     response.status(204).end();
@@ -179,7 +185,7 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
         projectId: request.project._id, userId: request.user._id,
         name: request.file.originalname.replace(/[\x00-\x1f\\/]/g, '_').slice(0, 200),
         type: acceptedTypes.get(request.file.mimetype), mimeType: request.file.mimetype,
-        size: request.file.size, data: request.file.buffer.toString('base64'),
+        size: request.file.size, data: request.file.buffer.toString('base64'), analysisStatus: 'pending',
       });
       await Project.updateOne({ _id: request.project._id }, { $set: { updatedAt: new Date() } });
       const result = asset.toObject();
@@ -197,7 +203,11 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
   }));
   app.delete('/api/projects/:id/media/:mediaId', asyncRoute(async (request, response) => {
     const asset = await ownedMedia(request);
-    await withProjectMutation(asset.projectId, request.user._id, () => asset.deleteOne());
+    await withProjectMutation(asset.projectId, request.user._id, async () => {
+      await ensureStorage(asset.projectId, 0, asset.size);
+      await MediaRevision.deleteMany({ mediaId: asset._id });
+      await Media.deleteOne({ _id: asset._id, projectId: asset.projectId, userId: request.user._id });
+    });
     response.status(204).end();
   }));
   app.get('/api/projects/:id/messages', asyncRoute(async (request, response) => {

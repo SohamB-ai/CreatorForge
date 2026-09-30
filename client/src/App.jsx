@@ -67,12 +67,8 @@ function Logo() {
       aria-label="CreatorForge"
       title="CreatorForge"
     >
-      <span className="w-9 h-9 rounded-[2.88px] border border-[var(--color-ink-black)] bg-[var(--color-ink-black)] flex items-center justify-center transition-all duration-150">
-        <img
-          src="/assets/pen_and_sword_badge.svg"
-          alt="CreatorForge insignia"
-          className="w-5 h-5 filter brightness-110 invert"
-        />
+      <span className="w-9 h-9 rounded-[2.88px] border border-[var(--color-ink-black)] bg-[var(--color-ink-black)] text-[var(--color-parchment)] flex items-center justify-center font-canopee text-base font-normal tracking-tight transition-all duration-150 group-hover:bg-[var(--color-ember-orange)] group-hover:border-[var(--color-ember-orange)]">
+        CF
       </span>
       <span className="font-canopee tracking-[-0.03em] font-normal text-xl text-[var(--color-ink-black)]">
         CREATORFORGE

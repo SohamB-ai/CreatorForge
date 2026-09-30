@@ -12,12 +12,8 @@ export function Footer() {
               className="inline-flex items-center gap-3 group"
               aria-label="CreatorForge"
             >
-              <span className="w-10 h-10 rounded-[4px] border-2 border-[var(--accent)] bg-[var(--surface)] flex items-center justify-center shadow-sm">
-                <img
-                  src="/assets/pen_and_sword_badge.svg"
-                  alt="CreatorForge insignia"
-                  className="w-6 h-6 filter brightness-105"
-                />
+              <span className="w-10 h-10 rounded-[4px] border-2 border-[var(--accent)] bg-[var(--surface)] text-[var(--accent)] flex items-center justify-center shadow-sm font-canopee text-xl font-bold tracking-tight">
+                CF
               </span>
               <span className="font-heading text-xl font-bold tracking-tight text-[var(--text)]">
                 CreatorForge

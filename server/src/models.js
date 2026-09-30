@@ -24,6 +24,7 @@ export const Project = mongoose.model('Project', new Schema({
   name: { type: String, required: true },
   description: { type: String, default: '' },
   skillIds: { type: [String], default: [] },
+  storageBytes: { type: Number, min: 0 },
 }, options));
 export const Media = mongoose.model('Media', new Schema({
   userId: owner,
@@ -36,6 +37,25 @@ export const Media = mongoose.model('Media', new Schema({
   studioRunId: { type: Schema.Types.ObjectId, ref: 'StudioRun' },
   sourceMessageId: { type: Schema.Types.ObjectId, ref: 'Message', unique: true, sparse: true },
   autoDescription: { type: String, default: '' },
+  analysisStatus: { type: String, enum: ['pending', 'processing', 'ready', 'failed'] },
+  analysisSummary: { type: String, default: '' },
+  analysisTranscript: { type: String, select: false },
+  analysisAttempts: { type: Number, default: 0 },
+  analysisLeaseUntil: { type: Date },
+  analysisLeaseId: { type: String, select: false },
+  analysisNextAttemptAt: { type: Date },
+  analysisError: { type: String },
+}, options));
+export const MediaRevision = mongoose.model('MediaRevision', new Schema({
+  userId: owner, projectId: project, mediaId: { type: Schema.Types.ObjectId, ref: 'Media', required: true, index: true },
+  version: { type: Number, required: true }, name: { type: String, required: true },
+  mimeType: { type: String, required: true }, size: { type: Number, required: true },
+  data: { type: String, required: true, select: false },
+}, options).index({ mediaId: 1, version: 1 }, { unique: true }));
+export const BrandLogo = mongoose.model('BrandLogo', new Schema({
+  userId: { ...owner, unique: true }, name: { type: String, required: true },
+  mimeType: { type: String, required: true }, size: { type: Number, required: true },
+  data: { type: String, required: true, select: false },
 }, options));
 export const Message = mongoose.model('Message', new Schema({
   userId: owner,

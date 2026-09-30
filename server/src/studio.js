@@ -108,7 +108,7 @@ export function installStudio(app, {
           old
         });
       }
-      await ensureStorage(run.projectId, Math.max(0, delta));
+      await ensureStorage(run.projectId, Math.max(0, delta), Math.max(0, -delta));
       await StudioRevision.create({
         runId: run._id,
         projectId: run.projectId,
