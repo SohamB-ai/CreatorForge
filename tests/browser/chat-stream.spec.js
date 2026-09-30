@@ -86,7 +86,6 @@ test('Stop keeps the prompt, aborts upstream, saves nothing and allows retry', a
   await expect.poll(() => signal.aborted).toBe(true);
   expect(await Message.countDocuments({ projectId: project._id })).toBe(0);
   expect(streamRequests).toBe(1);
-  release();
   provider = async function* () { yield '# Retry succeeded'; };
   await page.getByRole('button', { name: 'Send message' }).click();
   await expect(page.getByRole('button', { name: 'Stop generation' })).toHaveCount(0);
@@ -94,6 +93,7 @@ test('Stop keeps the prompt, aborts upstream, saves nothing and allows retry', a
   await expect(input).toHaveValue('');
   expect(await Message.countDocuments({ projectId: project._id })).toBe(2);
   expect(streamRequests).toBe(2);
+  release();
 });
 test('provider failure preserves app session and discards the draft', async ({ page }, info) => {
   provider = async function* () { yield 'Unsaved partial'; throw Object.assign(new Error('private provider credential'), { status: 401 }); };

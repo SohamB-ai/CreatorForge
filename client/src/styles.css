@@ -343,8 +343,9 @@ input:focus, textarea:focus, select:focus {
 /* Toast */
 .toast {
   position: fixed;
-  bottom: 24px;
+  top: 80px;
   right: 24px;
+  pointer-events: none;
   max-width: min(440px, calc(100vw - 32px));
   display: flex;
   align-items: center;
@@ -357,6 +358,10 @@ input:focus, textarea:focus, select:focus {
   background: var(--elevated);
   font-size: 13px;
   backdrop-filter: blur(8px);
+}
+
+.toast .icon-button {
+  pointer-events: auto;
 }
 
 .toast.success > svg {
@@ -2277,4 +2282,3 @@ input:focus, textarea:focus, select:focus {
     transform: none !important;
   }
 }
-

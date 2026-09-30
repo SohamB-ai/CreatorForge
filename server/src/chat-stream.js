@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
 import { once } from 'node:events';
 import { z } from 'zod';
-import { BrandKit, Media, Message, Project } from './models.js';
+import { BrandKit, Media, Message } from './models.js';
 import { resolveProjectSkill } from './project-skills.js';
+import { withProjectMutation } from './project-mutations.js';
 
 export function installChatStream(app, { aiLimiter, asyncRoute, ownedProject, withProjectLock, generate, streamTimeoutMs = 65000 }) {
   app.post('/api/chat/stream', aiLimiter, asyncRoute(async (request, response) => {
@@ -39,18 +40,20 @@ export function installChatStream(app, { aiLimiter, asyncRoute, ownedProject, wi
           await send('delta', { text });
         }
         controller.signal.throwIfAborted();
-        if (!await Project.exists({ _id: project._id, userId: request.user._id })) throw Object.assign(new Error('Project no longer exists.'), { status: 404 });
-        const identifiers = [new mongoose.Types.ObjectId(), new mongoose.Types.ObjectId()];
-        try {
-          const [userMessage, assistantMessage] = await Message.insertMany([
-            { _id: identifiers[0], projectId: project._id, userId: request.user._id, role: 'user', content: values.message },
-            { _id: identifiers[1], projectId: project._id, userId: request.user._id, role: 'model', content },
-          ]);
-          await send('done', { userMessage, assistantMessage });
-        } catch (failure) {
-          await Message.deleteMany({ _id: { $in: identifiers }, projectId: project._id, userId: request.user._id });
-          throw failure;
-        }
+        await withProjectMutation(project._id, request.user._id, async () => {
+          controller.signal.throwIfAborted();
+          const identifiers = [new mongoose.Types.ObjectId(), new mongoose.Types.ObjectId()];
+          try {
+            const [userMessage, assistantMessage] = await Message.insertMany([
+              { _id: identifiers[0], projectId: project._id, userId: request.user._id, role: 'user', content: values.message },
+              { _id: identifiers[1], projectId: project._id, userId: request.user._id, role: 'model', content },
+            ]);
+            await send('done', { userMessage, assistantMessage });
+          } catch (failure) {
+            await Message.deleteMany({ _id: { $in: identifiers }, projectId: project._id, userId: request.user._id });
+            throw failure;
+          }
+        });
       });
     } catch (failure) {
       if (!response.headersSent) throw failure;
