@@ -50,8 +50,14 @@ import { BrandColorPreview } from './components/BrandColorPreview.jsx';
 import { OrnateDivider } from './components/OrnateDivider.jsx';
 import { AtmosphereOverlay } from './components/AtmosphereOverlay.jsx';
 import { GoldenCursorTrail } from './components/GoldenCursorTrail.jsx';
+import { ScrollProgress } from './components/ScrollProgress.jsx';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const Auth = createContext(null);
+
 const Toast = createContext(null);
 const fileLimit = 5 * 1024 * 1024;
 const mediaIcons = { image: Image, audio: AudioLines, video: Video, document: FileText, text: FileText };
@@ -67,11 +73,11 @@ function Logo() {
       aria-label="CreatorForge"
       title="CreatorForge"
     >
-      <span className="w-11 h-11 sm:w-12 sm:h-12 rounded-[6px] border-2 border-[#C9A962] bg-[#1C1714]/60 flex items-center justify-center shadow-[0_0_14px_rgba(201,169,98,0.25)] group-hover:border-[#D4B872] group-hover:shadow-[0_0_22px_rgba(201,169,98,0.55)] group-hover:scale-105 transition-all duration-300">
+      <span className="w-11 h-11 sm:w-12 sm:h-12 rounded-[6px] border-2 border-[var(--accent)] bg-[var(--surface)] flex items-center justify-center shadow-[0_0_14px_var(--soft)] group-hover:border-[var(--accent-light)] group-hover:shadow-[0_0_22px_var(--soft)] group-hover:scale-105 transition-all duration-300">
         <img
           src="/assets/pen_and_sword_badge.svg"
           alt="CreatorForge insignia"
-          className="w-7 h-7 sm:w-8 sm:h-8 filter brightness-110 drop-shadow"
+          className="w-7 h-7 sm:w-8 sm:h-8 filter brightness-105 drop-shadow"
         />
       </span>
     </Link>
@@ -202,6 +208,7 @@ export default function App() {
   return (
     <Auth.Provider value={auth}>
       <Toast.Provider value={(message, kind = 'success') => setToast({ message, kind })}>
+        <ScrollProgress />
         <AtmosphereOverlay />
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -252,25 +259,25 @@ function Shell({ children, workspace = false }) {
 
   return (
     <div className={`app-shell ${workspace ? 'workspace-shell' : ''}`}>
-      <header className="app-header border-b border-[#4A3F35] bg-[#1C1714]/95 backdrop-blur-md">
+      <header className="app-header border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-md">
         <Logo />
         <nav aria-label="Main navigation" className="font-display text-xs tracking-wider">
-          <Link to="/dashboard" className="nav-link text-[#E8DFD4] hover:text-[#C9A962]" aria-label="Projects">
-            <LayoutGrid size={16} className="text-[#C9A962]" />
+          <Link to="/dashboard" className="nav-link text-[var(--text)] hover:text-[var(--accent)]" aria-label="Projects">
+            <LayoutGrid size={16} className="text-[var(--accent)]" />
             <span>Archives</span>
           </Link>
-          <Link to="/settings/brandkit" className="nav-link text-[#E8DFD4] hover:text-[#C9A962]" aria-label="Brand kit">
-            <Palette size={16} className="text-[#C9A962]" />
+          <Link to="/settings/brandkit" className="nav-link text-[var(--text)] hover:text-[var(--accent)]" aria-label="Brand kit">
+            <Palette size={16} className="text-[var(--accent)]" />
             <span>Lexicon</span>
           </Link>
         </nav>
         <div className="account flex items-center gap-3">
           <ThemeButton />
-          <span className="avatar bg-[#C9A962]/20 border border-[#C9A962]/40 text-[#D4B872] font-semibold font-display" title={auth.user.name}>
+          <span className="avatar bg-[var(--soft)] border border-[var(--accent)]/40 text-[var(--accent)] font-semibold font-display" title={auth.user.name}>
             {auth.user.name.slice(0, 1).toUpperCase()}
           </span>
           <button
-            className="icon-button hover:text-[#C9A962]"
+            className="icon-button hover:text-[var(--accent)]"
             aria-label="Sign out"
             onClick={() => {
               auth.logout();
@@ -290,15 +297,116 @@ function Landing() {
   const auth = useContext(Auth);
   const next = auth.user ? '/dashboard' : '/register';
 
+  const heroSectionRef = useRef(null);
+  const heroCopyRef = useRef(null);
+  const heroVisualRef = useRef(null);
+  const proclamationRef = useRef(null);
+
+  const [heroVoicePlaying, setHeroVoicePlaying] = useState(false);
+  const [heroVoiceSec, setHeroVoiceSec] = useState(165);
+  const [heroWaves, setHeroWaves] = useState([35, 70, 45, 90, 60, 40, 80, 50, 25, 65, 85, 30]);
+
+  // Audio wave animation for hero voice record
+  useEffect(() => {
+    let timer;
+    if (heroVoicePlaying) {
+      timer = setInterval(() => {
+        setHeroVoiceSec((s) => s + 1);
+        setHeroWaves((prev) => prev.map(() => Math.floor(Math.random() * 70) + 25));
+      }, 160);
+    }
+    return () => clearInterval(timer);
+  }, [heroVoicePlaying]);
+
+  // GSAP ScrollTrigger & Stagger Choreography
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const ctx = gsap.context(() => {
+      // Hero copy stagger
+      if (heroCopyRef.current) {
+        gsap.fromTo(
+          heroCopyRef.current.children,
+          { opacity: 0, y: 26 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.85,
+            stagger: 0.12,
+            ease: 'power3.out',
+          }
+        );
+      }
+
+      // Hero archival desk entrance
+      if (heroVisualRef.current) {
+        gsap.fromTo(
+          heroVisualRef.current,
+          { opacity: 0, y: 38, scale: 0.96 },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 1.05,
+            delay: 0.2,
+            ease: 'power3.out',
+          }
+        );
+
+        // Smooth physical depth parallax as user scrolls down
+        if (heroSectionRef.current) {
+          gsap.to(heroVisualRef.current, {
+            yPercent: 10,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: heroSectionRef.current,
+              start: 'top top',
+              end: 'bottom top',
+              scrub: true,
+            },
+          });
+        }
+      }
+
+      // Volume IV: Proclamation reveal
+      if (proclamationRef.current) {
+        gsap.fromTo(
+          proclamationRef.current,
+          { opacity: 0, y: 35, scale: 0.95 },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.95,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: proclamationRef.current,
+              start: 'top 85%',
+            },
+          }
+        );
+      }
+    });
+
+    return () => ctx.revert();
+  }, []);
+
+  const formatHeroTimer = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `0${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
   return (
     <div className="landing max-w-6xl mx-auto px-6 py-4">
       <GoldenCursorTrail />
-      <header className="landing-header border-b border-[#4A3F35] py-5 flex items-center justify-between">
+      <header className="landing-header border-b border-[var(--border)] py-5 flex items-center justify-between">
         <Logo />
         <div className="landing-actions flex items-center gap-6">
           <ThemeButton />
           <Link
-            className="font-display text-xs uppercase tracking-[0.2em] text-[#C9A962] hover:tracking-[0.26em] hover:text-[#D4B872] transition-all flex items-center gap-2"
+            className="font-display text-xs uppercase tracking-[0.2em] text-[var(--accent)] hover:tracking-[0.26em] hover:text-[var(--accent-light)] transition-all flex items-center gap-2"
             to={auth.user ? '/dashboard' : '/login'}
           >
             {auth.user ? 'Enter Scriptorium' : 'Access Archives'}
@@ -309,17 +417,17 @@ function Landing() {
 
       <main>
         {/* Volume I: The Scriptorium Hero */}
-        <section className="hero py-16 md:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="hero-copy lg:col-span-6">
-            <span className="font-display text-[11px] font-semibold tracking-[0.3em] uppercase text-[#C9A962] mb-4 block">
+        <section ref={heroSectionRef} className="hero py-16 md:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div ref={heroCopyRef} className="hero-copy lg:col-span-6 will-change-transform">
+            <span className="font-display text-[11px] font-semibold tracking-[0.3em] uppercase text-[var(--accent)] mb-4 block">
               Volume I · The Scriptorium
             </span>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-medium tracking-tight text-[#E8DFD4] leading-[1.08] mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-medium tracking-tight text-[var(--text)] leading-[1.08] mb-6">
               Many sources.<br />
               One enduring<br />
-              <span className="text-[#C9A962] italic font-normal">scholarship.</span>
+              <span className="text-[var(--accent)] italic font-normal">scholarship.</span>
             </h1>
-            <p className="drop-cap text-lg text-[#9C8B7A] font-body leading-relaxed max-w-lg mb-8">
+            <p className="drop-cap text-lg text-[var(--muted)] font-body leading-relaxed max-w-lg mb-8">
               Gather your archival plates, vocal dictations, film fragments, and historical folios into one consecrated study. Transform scattered thoughts into timeless manuscripts in your distinctive voice.
             </p>
             <div className="flex flex-wrap items-center gap-4">
@@ -332,71 +440,85 @@ function Landing() {
             </div>
           </div>
 
-          <div className="hero-visual lg:col-span-6 relative">
-            <div className="ornate-frame p-6 md:p-8 rounded-[4px] border border-[#4A3F35] bg-[#251E19] shadow-2xl">
-              <div className="flex items-center justify-between border-b border-[#4A3F35] pb-3 mb-5 font-display text-[10.5px] uppercase tracking-[0.22em] text-[#C9A962]">
+          <div ref={heroVisualRef} className="hero-visual lg:col-span-6 relative will-change-transform">
+            <div className="ornate-frame p-6 md:p-8 rounded-[4px] border border-[var(--border)] bg-[var(--surface)] shadow-2xl transition-colors">
+              <div className="flex items-center justify-between border-b border-[var(--border)] pb-3 mb-5 font-display text-[10.5px] uppercase tracking-[0.22em] text-[var(--accent)]">
                 <span className="flex items-center gap-2">
                   <BookOpen size={14} /> The Archival Desk
                 </span>
-                <span className="text-[#9C8B7A]">Folio 01 · Active</span>
+                <span className="text-[var(--muted)]">Folio 01 · Active</span>
               </div>
 
               {/* Cathedral Arch-Topped Feature Plate */}
-              <div className="arch-top overflow-hidden border border-[#4A3F35] bg-[#1C1714] mb-5 relative group">
+              <div className="arch-top overflow-hidden border border-[var(--border)] bg-[var(--elevated)] mb-5 relative group">
                 <img
                   src="/assets/creative_studio_art.jpg"
                   alt="Archival study and creative references"
                   className="w-full h-56 object-cover object-center sepia-reveal hover:scale-105 transition-all duration-700"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#1C1714] via-transparent to-transparent opacity-80" />
-                <span className="absolute bottom-3 left-4 inline-flex items-center gap-2 font-display text-[10px] uppercase tracking-[0.16em] text-[#E8DFD4] bg-[#1C1714]/85 px-2.5 py-1 rounded-[3px] border border-[#4A3F35]">
-                  <Image size={12} className="text-[#C9A962]" /> Reference Plate · Oil on Canvas
+                <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface)]/90 via-transparent to-transparent opacity-80" />
+                <span className="absolute bottom-3 left-4 inline-flex items-center gap-2 font-display text-[10px] uppercase tracking-[0.16em] text-[var(--text)] bg-[var(--surface)]/90 px-2.5 py-1 rounded-[3px] border border-[var(--border)] backdrop-blur-sm shadow-sm">
+                  <Image size={12} className="text-[var(--accent)]" /> Reference Plate · Oil on Canvas
                 </span>
               </div>
 
               {/* Multi-source cards grid */}
               <div className="grid grid-cols-2 gap-3 mb-5">
-                <div className="p-3 rounded-[3px] bg-[#1C1714] border border-[#4A3F35] flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-xs text-[#9C8B7A] font-display">
-                    <span className="flex items-center gap-1.5"><AudioLines size={12} className="text-[#C9A962]" /> Voice Record</span>
-                    <span className="font-mono text-[10px] text-[#C9A962]">02:45</span>
+                <div
+                  onClick={() => setHeroVoicePlaying(!heroVoicePlaying)}
+                  className="p-3 rounded-[3px] bg-[var(--elevated)] border border-[var(--border)] flex flex-col justify-between shadow-sm cursor-pointer hover:border-[var(--accent)]/50 transition-colors group"
+                  title={heroVoicePlaying ? 'Pause voice dictation' : 'Click to preview voice dictation'}
+                >
+                  <div className="flex items-center justify-between text-xs text-[var(--muted)] font-display">
+                    <span className="flex items-center gap-1.5 group-hover:text-[var(--accent)] transition-colors">
+                      <AudioLines size={12} className="text-[var(--accent)]" /> Voice Record
+                    </span>
+                    <span className="font-mono text-[10px] text-[var(--accent)]">{formatHeroTimer(heroVoiceSec)}</span>
                   </div>
                   <div className="h-6 flex items-center gap-1 mt-2">
-                    {[35, 70, 45, 90, 60, 40, 80, 50, 25, 65, 85, 30].map((h, i) => (
-                      <span key={i} style={{ height: `${h}%` }} className="w-1 bg-[#C9A962] rounded-[1px] opacity-75" />
+                    {heroWaves.map((h, i) => (
+                      <span
+                        key={i}
+                        style={{ height: `${h}%` }}
+                        className={`w-1 rounded-[1px] transition-all duration-150 ${
+                          heroVoicePlaying
+                            ? 'bg-[var(--accent)] shadow-[0_0_4px_rgba(201,169,98,0.6)]'
+                            : 'bg-[var(--accent)] opacity-70 group-hover:opacity-100'
+                        }`}
+                      />
                     ))}
                   </div>
                 </div>
 
-                <div className="p-3 rounded-[3px] bg-[#1C1714] border border-[#4A3F35] flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-xs text-[#9C8B7A] font-display">
-                    <span className="flex items-center gap-1.5"><FileText size={12} className="text-[#C9A962]" /> Research Brief</span>
-                    <span className="text-[10px] text-[#9C8B7A]">V. 3.2</span>
+                <div className="p-3 rounded-[3px] bg-[var(--elevated)] border border-[var(--border)] flex flex-col justify-between shadow-sm">
+                  <div className="flex items-center justify-between text-xs text-[var(--muted)] font-display">
+                    <span className="flex items-center gap-1.5"><FileText size={12} className="text-[var(--accent)]" /> Research Brief</span>
+                    <span className="text-[10px] text-[var(--muted)]">V. 3.2</span>
                   </div>
                   <div className="space-y-1.5 mt-2">
-                    <div className="h-1 bg-[#4A3F35] w-full rounded-[1px]" />
-                    <div className="h-1 bg-[#4A3F35] w-3/4 rounded-[1px]" />
-                    <div className="h-1 bg-[#C9A962]/40 w-1/2 rounded-[1px]" />
+                    <div className="h-1 bg-[var(--border)] w-full rounded-[1px]" />
+                    <div className="h-1 bg-[var(--border)] w-3/4 rounded-[1px]" />
+                    <div className="h-1 bg-[var(--accent)]/40 w-1/2 rounded-[1px]" />
                   </div>
                 </div>
               </div>
 
               {/* Synthesis result indicator */}
-              <div className="p-3.5 rounded-[3px] bg-[#1C1714] border border-[#C9A962]/40 flex items-center justify-between shadow-sm">
+              <div className="p-3.5 rounded-[3px] bg-[var(--elevated)] border border-[var(--accent)]/40 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-full border border-[#C9A962] bg-[#251E19] flex items-center justify-center text-[#C9A962] shadow-sm">
+                  <span className="w-8 h-8 rounded-full border border-[var(--accent)] bg-[var(--surface)] flex items-center justify-center text-[var(--accent)] shadow-sm">
                     <Sparkles size={15} />
                   </span>
                   <div>
-                    <strong className="block text-sm font-heading font-medium text-[#E8DFD4] tracking-normal">
+                    <strong className="block text-sm font-heading font-medium text-[var(--text)] tracking-normal">
                       Context becomes canon.
                     </strong>
-                    <small className="text-xs text-[#9C8B7A] font-body">
+                    <small className="text-xs text-[var(--muted)] font-body">
                       Synthesized into high-impact essays and scripts
                     </small>
                   </div>
                 </div>
-                <ArrowUp size={16} className="text-[#C9A962]" />
+                <ArrowUp size={16} className="text-[var(--accent)]" />
               </div>
             </div>
           </div>
@@ -413,17 +535,21 @@ function Landing() {
         <OrnateDivider glyph="✤" />
 
         {/* Volume IV: The Proclamation / Call to Action */}
-        <section className="my-20 p-10 md:p-16 rounded-[4px] bg-[#251E19] border border-[#4A3F35] text-center relative ornate-frame max-w-4xl mx-auto shadow-2xl">
-          <span className="font-display text-[10.5px] font-semibold tracking-[0.3em] uppercase text-[#C9A962] mb-3 block">
+        <section
+          ref={proclamationRef}
+          className="my-20 p-10 md:p-16 rounded-[4px] bg-[var(--surface)] border border-[var(--border)] text-center relative ornate-frame max-w-4xl mx-auto shadow-2xl overflow-hidden will-change-transform"
+        >
+          <BorderBeam size={260} duration={14} borderWidth={1.5} colorFrom="#FFE680" colorTo="#C9A962" />
+          <span className="font-display text-[10.5px] font-semibold tracking-[0.3em] uppercase text-[var(--accent)] mb-3 block">
             Volume IV · The Proclamation
           </span>
-          <h2 className="text-3xl md:text-5xl font-heading font-medium tracking-tight text-[#E8DFD4] mb-4">
+          <h2 className="text-3xl md:text-5xl font-heading font-medium tracking-tight text-[var(--text)] mb-4">
             Ready to inscribe your creative legacy?
           </h2>
-          <p className="text-[#9C8B7A] font-body text-lg max-w-xl mx-auto mb-9 leading-relaxed">
+          <p className="text-[var(--muted)] font-body text-lg max-w-xl mx-auto mb-9 leading-relaxed">
             Create your first project archive, deposit your research and vocal dictations, and craft with unyielding scholarly conviction.
           </p>
-          <div className="flex justify-center">
+          <div className="flex justify-center relative z-10">
             <ShimmerButton to={next} className="primary">
               Commence Creation <ArrowRight size={16} />
             </ShimmerButton>
@@ -431,14 +557,15 @@ function Landing() {
         </section>
       </main>
 
-      <footer className="landing-footer flex flex-col sm:flex-row items-center justify-between py-10 border-t border-[#4A3F35] text-xs font-body text-[#9C8B7A] gap-4">
+
+      <footer className="landing-footer flex flex-col sm:flex-row items-center justify-between py-10 border-t border-[var(--border)] text-xs font-body text-[var(--muted)] gap-4">
         <div className="flex items-center gap-3">
           <Logo />
-          <span className="font-display text-[10px] tracking-wider uppercase text-[#9C8B7A]">
+          <span className="font-display text-[10px] tracking-wider uppercase text-[var(--muted)]">
             A sanctuary for source preservation and scholarly craft.
           </span>
         </div>
-        <div className="font-display text-[10px] tracking-widest uppercase text-[#9C8B7A]">
+        <div className="font-display text-[10px] tracking-widest uppercase text-[var(--muted)]">
           Anno Domini MMXXVI · CreatorForge · All rights reserved.
         </div>
       </footer>
@@ -477,32 +604,32 @@ function AuthPage({ register = false }) {
 
   return (
     <div className="auth-page">
-      <header className="border-b border-white/[0.06]">
+      <header className="border-b border-[var(--border)] py-4 flex items-center justify-between">
         <Logo />
         <ThemeButton />
       </header>
       <main className="auth-layout max-w-5xl mx-auto py-12 px-4">
         <aside className="pr-4">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-3">Less scattered.<br />More creative.</h1>
-          <p className="text-zinc-400 text-base leading-relaxed">A home for your source material and the ideas it inspires.</p>
-          <div className="mt-8 rounded-xl overflow-hidden border border-white/[0.08] max-w-sm bg-[#121217]">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[var(--text)] mb-3 font-heading">Less scattered.<br />More creative.</h1>
+          <p className="text-[var(--muted)] text-base leading-relaxed">A home for your source material and the ideas it inspires.</p>
+          <div className="mt-8 rounded-xl overflow-hidden border border-[var(--border)] max-w-sm bg-[var(--surface)] shadow-md">
             <img
               src="/assets/moodboard_photo.jpg"
               alt="Creative studio moodboard"
-              className="w-full h-52 object-cover filter brightness-90"
+              className="w-full h-52 object-cover filter brightness-95"
             />
           </div>
-          <div className="auth-source-icons flex items-center gap-4 mt-6 text-zinc-400">
-            <Image size={20} className="hover:text-orange-400 transition-colors" />
-            <AudioLines size={20} className="hover:text-orange-400 transition-colors" />
-            <Video size={20} className="hover:text-orange-400 transition-colors" />
-            <FileText size={20} className="hover:text-orange-400 transition-colors" />
+          <div className="auth-source-icons flex items-center gap-4 mt-6 text-[var(--muted)]">
+            <Image size={20} className="hover:text-[var(--accent)] transition-colors" />
+            <AudioLines size={20} className="hover:text-[var(--accent)] transition-colors" />
+            <Video size={20} className="hover:text-[var(--accent)] transition-colors" />
+            <FileText size={20} className="hover:text-[var(--accent)] transition-colors" />
           </div>
         </aside>
 
-        <section className="auth-form bg-[#121217] border border-white/[0.08] p-8 md:p-10 rounded-2xl shadow-xl relative">
-          <h2 className="text-2xl font-bold text-white mb-2">{register ? 'Make room for your ideas.' : 'Welcome back.'}</h2>
-          <p className="text-zinc-400 text-sm mb-6">
+        <section className="auth-form bg-[var(--surface)] border border-[var(--border)] p-8 md:p-10 rounded-2xl shadow-[var(--card-shadow)] relative">
+          <h2 className="text-2xl font-bold text-[var(--text)] mb-2 font-heading">{register ? 'Make room for your ideas.' : 'Welcome back.'}</h2>
+          <p className="text-[var(--muted)] text-sm mb-6">
             {register
               ? 'Create an account to start your first project.'
               : 'Your projects and creative direction await.'}
@@ -555,16 +682,16 @@ function AuthPage({ register = false }) {
 
             {error && <p className="inline-error" role="alert">{error}</p>}
 
-            <button disabled={busy || googleBusy} className="button primary full bg-orange-500 hover:bg-orange-600 shadow-[0_0_20px_rgba(255,94,30,0.3)] text-white">
+            <button disabled={busy || googleBusy} className="button primary full">
               {busy ? <LoaderCircle className="spin" size={18} /> : null}
               {register ? 'Create account' : 'Sign in'}
               <ArrowRight size={18} />
             </button>
           </form>
 
-          <p className="auth-switch text-center text-xs text-zinc-400 mt-6">
+          <p className="auth-switch text-center text-xs text-[var(--muted)] mt-6">
             {register ? 'Already have an account?' : 'New to CreatorForge?'}
-            <Link to={register ? '/login' : '/register'} className="text-orange-400 hover:underline font-medium ml-1">
+            <Link to={register ? '/login' : '/register'} className="text-[var(--accent)] hover:underline font-medium ml-1">
               {register ? 'Sign in' : 'Create an account'}
             </Link>
           </p>
@@ -702,8 +829,8 @@ function Dashboard() {
       <main className="dashboard max-w-6xl mx-auto py-8 px-4 sm:px-6">
         <div className="page-title flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Let's make something, {auth.user.name.split(' ')[0]}.</h1>
-            <p className="text-zinc-400 text-sm">Every great piece of content starts with a place for your ideas.</p>
+            <h1 className="text-3xl font-bold tracking-tight text-[var(--text)] mb-2 font-heading">Let's make something, {auth.user.name.split(' ')[0]}.</h1>
+            <p className="text-[var(--muted)] text-sm">Every great piece of content starts with a place for your ideas.</p>
           </div>
           <button className="button primary shrink-0" onClick={() => setDialog({ type: 'create' })}>
             <Plus size={18} />New project
@@ -712,8 +839,8 @@ function Dashboard() {
 
         <CreatorWelcome onCreate={() => setDialog({ type: 'create' })} />
 
-        <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-white/[0.06]">
-          <span className="text-xs text-zinc-400 font-medium">
+        <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-[var(--border)]">
+          <span className="text-xs text-[var(--muted)] font-medium">
             {projects.length} {projects.length === 1 ? 'project' : 'projects'}
           </span>
 
@@ -736,17 +863,17 @@ function Dashboard() {
             <button className="button secondary" onClick={load}>Try again</button>
           </div>
         ) : !projects.length ? (
-          <div className="empty-state border border-white/[0.08] rounded-2xl bg-[#121217]">
-            <div className="empty-illustration border border-orange-500/30 bg-orange-500/10 text-orange-400">
+          <div className="empty-state border border-[var(--border)] rounded-2xl bg-[var(--surface)]">
+            <div className="empty-illustration border border-[var(--accent)]/30 bg-[var(--soft)] text-[var(--accent)]">
               <Folder size={42} strokeWidth={1.25} />
-              <span className="bg-orange-500 text-white"><Plus size={17} /></span>
+              <span className="bg-[var(--accent)] text-[var(--surface)]"><Plus size={17} /></span>
             </div>
             <h2>A blank canvas. A world of possibilities.</h2>
             <p>Create a project, bring in your source material,<br className="desktop-only" /> and give your next idea a home.</p>
             <button className="button primary" onClick={() => setDialog({ type: 'create' })}>
               <Plus size={17} />Create your first project
             </button>
-            <div className="supported-formats text-zinc-400">
+            <div className="supported-formats text-[var(--muted)]">
               <Image size={17} />Images
               <AudioLines size={17} />Audio
               <Video size={17} />Video
@@ -756,23 +883,23 @@ function Dashboard() {
         ) : visible.length ? (
           <div className="project-grid">
             {visible.map((project) => (
-              <article className="project-card border border-white/[0.08] bg-[#121217] rounded-xl hover:border-zinc-700 transition-all group" key={project._id}>
+              <article className="project-card border border-[var(--border)] bg-[var(--surface)] rounded-xl hover:border-[var(--accent)] shadow-sm hover:shadow-md transition-all group" key={project._id}>
                 <Link to={`/project/${project._id}`} className="project-main p-5">
-                  <div className="project-symbol bg-white/5 border border-white/10 text-orange-400 rounded-lg p-2.5 inline-flex mb-3 group-hover:scale-105 transition-transform">
+                  <div className="project-symbol bg-[var(--elevated)] border border-[var(--border)] text-[var(--accent)] rounded-lg p-2.5 inline-flex mb-3 group-hover:scale-105 transition-transform">
                     <Folder size={20} strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-lg font-semibold text-white group-hover:text-orange-400 transition-colors">{project.name}</h3>
-                  <p className="text-zinc-400 text-sm line-clamp-2 my-2">{project.description || 'Your project workspace.'}</p>
-                  <div className="project-stats text-xs text-zinc-400 pt-2 border-t border-white/[0.04]">
-                    <span><FileText size={13} className="text-orange-400" />{project.mediaCount || 0} {project.mediaCount === 1 ? 'source' : 'sources'}</span>
-                    <span><MessageSquare size={13} className="text-zinc-500" />{project.messageCount || 0} {project.messageCount === 1 ? 'message' : 'messages'}</span>
+                  <h3 className="text-lg font-semibold text-[var(--text)] group-hover:text-[var(--accent)] transition-colors font-heading">{project.name}</h3>
+                  <p className="text-[var(--muted)] text-sm line-clamp-2 my-2">{project.description || 'Your project workspace.'}</p>
+                  <div className="project-stats text-xs text-[var(--muted)] pt-2 border-t border-[var(--border)]">
+                    <span><FileText size={13} className="text-[var(--accent)]" />{project.mediaCount || 0} {project.mediaCount === 1 ? 'source' : 'sources'}</span>
+                    <span><MessageSquare size={13} className="text-[var(--muted)]" />{project.messageCount || 0} {project.messageCount === 1 ? 'message' : 'messages'}</span>
                   </div>
                 </Link>
-                <div className="project-footer px-5 py-3 border-t border-white/[0.06] bg-[#15151c] flex items-center justify-between text-xs text-zinc-400">
+                <div className="project-footer px-5 py-3 border-t border-[var(--border)] bg-[var(--elevated)] flex items-center justify-between text-xs text-[var(--muted)]">
                   <span className="font-mono">Updated {new Date(project.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                   <div className="flex items-center gap-1">
                     <button
-                      className="icon-button hover:text-white"
+                      className="icon-button hover:text-[var(--text)]"
                       aria-label={`Edit ${project.name}`}
                       onClick={() => setDialog({ type: 'edit', project })}
                     >
@@ -794,13 +921,13 @@ function Dashboard() {
           <p className="muted py-8 text-center">No projects match “{search}”.</p>
         )}
 
-        <div className="dashboard-tip border border-orange-500/20 bg-[#121217] rounded-xl my-8">
-          <Palette size={20} className="text-orange-400" />
+        <div className="dashboard-tip border border-[var(--border)] bg-[var(--surface)] rounded-xl my-8 shadow-sm">
+          <Palette size={20} className="text-[var(--accent)]" />
           <div>
             <strong>Your voice, in every creation.</strong>
             <p>Set up your brand kit to keep all your AI-generated content on-brand.</p>
           </div>
-          <Link to="/settings/brandkit" className="text-orange-400 font-medium hover:underline inline-flex items-center gap-1">
+          <Link to="/settings/brandkit" className="text-[var(--accent)] font-medium hover:underline inline-flex items-center gap-1">
             Set up brand kit <ArrowRight size={16} />
           </Link>
         </div>
@@ -1075,12 +1202,12 @@ function Workspace() {
 
   return (
     <Shell workspace>
-      <div className="workspace-top border-b border-white/[0.08] bg-[#0e0e13]/90 px-6 py-3 flex items-center justify-between">
+      <div className="workspace-top border-b border-[var(--border)] bg-[var(--surface)]/95 px-6 py-3 flex items-center justify-between backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <div className="breadcrumbs flex items-center gap-2 text-sm text-zinc-400">
-            <Link to="/dashboard" className="hover:text-white transition-colors">Projects</Link>
-            <ChevronRight size={14} className="text-zinc-600" />
-            <strong className="text-white font-medium">{project.name}</strong>
+          <div className="breadcrumbs flex items-center gap-2 text-sm text-[var(--muted)]">
+            <Link to="/dashboard" className="hover:text-[var(--text)] transition-colors">Projects</Link>
+            <ChevronRight size={14} className="text-[var(--muted)]" />
+            <strong className="text-[var(--text)] font-medium font-heading">{project.name}</strong>
           </div>
           <button className="icon-button" aria-label="Edit project" onClick={() => setEditProject(true)}>
             <Pencil size={15} />
@@ -1089,7 +1216,7 @@ function Workspace() {
       </div>
 
       <main className="workspace">
-        <aside className="media-rail bg-[#121217] border-r border-white/[0.08]">
+        <aside className="media-rail bg-[var(--surface)] border-r border-[var(--border)]">
           <div className="rail-title mb-4">
             <h2>Source library <span className="count">{media.length}</span></h2>
             <span className="muted text-xs">Project files and references</span>
@@ -1106,7 +1233,7 @@ function Workspace() {
           />
 
           <button
-            className={`upload-zone ${dragging ? 'dragging' : ''} border border-dashed border-white/20 hover:border-orange-500/60 transition-colors bg-[#181820]/50`}
+            className={`upload-zone ${dragging ? 'dragging' : ''} border border-dashed border-[var(--border-strong)] hover:border-[var(--accent)] transition-colors bg-[var(--elevated)]/50`}
             onDragOver={(event) => {
               event.preventDefault();
               setDragging(true);
@@ -1119,7 +1246,7 @@ function Workspace() {
             onClick={() => fileInput.current.click()}
             disabled={uploading}
           >
-            <Upload size={23} className="text-orange-400" />
+            <Upload size={23} className="text-[var(--accent)]" />
             <strong>{uploading ? `Uploading… ${progress}%` : 'Drop your files here'}</strong>
             <span>{uploading ? 'Keeping your sources together' : 'or click to browse'}</span>
             <small>Images, audio, video, PDF & text · 5 MB each</small>
@@ -1130,9 +1257,9 @@ function Workspace() {
             {media.map((asset) => {
               const Icon = mediaIcons[asset.type] || FileText;
               return (
-                <div className="asset border border-white/[0.06] bg-[#181820] hover:border-orange-500/30 rounded-lg transition-colors" key={asset._id}>
+                <div className="asset border border-[var(--border)] bg-[var(--elevated)] hover:border-[var(--accent)] rounded-lg transition-colors" key={asset._id}>
                   <button className="asset-open" onClick={() => setPreview(asset)}>
-                    <span className={`asset-icon ${asset.type} text-orange-400`}>
+                    <span className={`asset-icon ${asset.type} text-[var(--accent)]`}>
                       <Icon size={20} />
                     </span>
                     <span>
@@ -1170,14 +1297,14 @@ function Workspace() {
             </div>
           )}
 
-          <div className="context-note border border-white/[0.06] bg-[#181820] rounded-lg p-3">
-            <Sparkles size={15} className="text-orange-400" />
+          <div className="context-note border border-[var(--border)] bg-[var(--elevated)] rounded-lg p-3">
+            <Sparkles size={15} className="text-[var(--accent)]" />
             <span>Chat uses every asset in this project.<br />Remix focuses on the one you choose.</span>
           </div>
         </aside>
 
-        <section className="creation-panel bg-[#09090b]">
-          <div className="workspace-tabs border-b border-white/[0.08]" role="tablist" aria-label="Creation tools">
+        <section className="creation-panel bg-[var(--bg)]">
+          <div className="workspace-tabs border-b border-[var(--border)]" role="tablist" aria-label="Creation tools">
             <button
               id="chat-tab"
               role="tab"
@@ -1204,7 +1331,7 @@ function Workspace() {
               <WandSparkles size={17} />Content remix
             </button>
             <span className="context-counter font-mono text-xs">
-              <FileText size={14} className="text-orange-400" />{media.length} assets in context
+              <FileText size={14} className="text-[var(--accent)]" />{media.length} assets in context
             </span>
           </div>
 
@@ -1232,7 +1359,7 @@ function Workspace() {
                 <div className="chat-scroll">
                   {!messages.length && !pending ? (
                     <div className="chat-welcome">
-                      <span className="sparkle-mark bg-orange-500/10 border border-orange-500/20 text-orange-400">
+                      <span className="sparkle-mark bg-[var(--soft)] border border-[var(--accent)]/30 text-[var(--accent)]">
                         <Sparkles size={28} strokeWidth={1.5} />
                       </span>
                       <h1>What are we creating today?</h1>
@@ -1248,8 +1375,8 @@ function Workspace() {
                           ['Draft a blog post', 'Create a blog post from the source material in this project.', Pencil],
                           ['Build a video script', 'Turn my source material into a 60-second video script.', Video],
                         ].map(([label, prompt, Icon]) => (
-                          <button key={label} onClick={() => setInput(prompt)} className="hover:border-orange-500/40">
-                            <Icon size={19} className="text-orange-400" />
+                          <button key={label} onClick={() => setInput(prompt)} className="border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)] hover:shadow-sm transition-all text-left">
+                            <Icon size={19} className="text-[var(--accent)]" />
                             <span>{label}</span>
                             <ArrowRight size={15} />
                           </button>
@@ -1260,7 +1387,7 @@ function Workspace() {
                     <div className="messages">
                       {messages.map((message) => (
                         <article className={`message ${message.role}`} key={message._id}>
-                          <span className={`message-avatar ${message.role === 'model' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : ''}`}>
+                          <span className={`message-avatar ${message.role === 'model' ? 'bg-[var(--soft)] text-[var(--accent)] border border-[var(--accent)]/30' : 'bg-[var(--elevated)] text-[var(--muted)] border border-[var(--border)]'}`}>
                             {message.role === 'model' ? <Sparkles size={17} /> : 'You'}
                           </span>
                           <div>
@@ -1295,7 +1422,7 @@ function Workspace() {
                               <div className="markdown"><Markdown remarkPlugins={[remarkGfm]}>{draftResponse}</Markdown></div>
                             </div>
                           </article>}
-                          <div className="generating text-orange-400" role="status">
+                          <div className="generating text-[var(--accent)]" role="status">
                             <LoaderCircle className="spin" size={17} />{draftResponse ? 'Writing your response…' : 'Connecting your sources…'}
                           </div>
                         </>
@@ -1308,20 +1435,20 @@ function Workspace() {
                 <div className="composer-wrap">
                   {/* Channel format selector pills */}
                   <div className="flex items-center gap-2 mb-2 overflow-x-auto pb-1 text-xs">
-                    <span className="text-[11px] font-mono text-zinc-500 mr-1 shrink-0">FORMATS:</span>
+                    <span className="text-[11px] font-mono text-[var(--muted)] mr-1 shrink-0">FORMATS:</span>
                     {formats.slice(0, 5).map((f) => (
                       <button
                         key={f}
                         type="button"
                         onClick={() => setInput((prev) => prev ? `${prev}\n\nFormat as ${f}.` : `Write a ${f} based on this project.`)}
-                        className="px-2.5 py-1 rounded bg-[#181820] hover:bg-orange-500/20 hover:text-orange-300 border border-white/[0.08] text-zinc-300 font-mono text-[11px] shrink-0 transition-colors"
+                        className="px-2.5 py-1 rounded bg-[var(--surface)] hover:bg-[var(--soft)] hover:text-[var(--accent)] border border-[var(--border)] text-[var(--muted)] font-mono text-[11px] shrink-0 transition-colors"
                       >
                         +{f}
                       </button>
                     ))}
                   </div>
 
-                  <form onSubmit={send} className="composer border border-white/[0.08] bg-[#0e0e12] rounded-xl focus-within:border-orange-500/60 focus-within:ring-2 focus-within:ring-orange-500/15">
+                  <form onSubmit={send} className="composer border border-[var(--border)] bg-[var(--surface)] rounded-xl focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent)]/15 shadow-sm">
                     <textarea
                       aria-label="Message CreatorForge"
                       rows={2}
@@ -1337,9 +1464,9 @@ function Workspace() {
                         }
                       }}
                     />
-                    <div className="composer-footer border-t border-white/[0.04]">
-                      <span className="text-zinc-400 font-mono text-xs"><Sparkles size={13} className="text-orange-400" />Project context + calibrated voice</span>
-                      {pending ? <button key="stop-generation" type="button" className="send-button" aria-label="Stop generation" title="Stop generation" onClick={(event) => { event.preventDefault(); generation.current?.abort(); }}><span aria-hidden="true">■</span></button> : <button key="send-message" type="submit" className="send-button bg-orange-500 hover:bg-orange-600 text-white shadow-[0_0_16px_rgba(255,94,30,0.35)]" aria-label="Send message" disabled={busy || !input.trim()}>
+                    <div className="composer-footer border-t border-[var(--border)]">
+                      <span className="text-[var(--muted)] font-mono text-xs"><Sparkles size={13} className="text-[var(--accent)]" />Project context + calibrated voice</span>
+                      {pending ? <button key="stop-generation" type="button" className="send-button" aria-label="Stop generation" title="Stop generation" onClick={(event) => { event.preventDefault(); generation.current?.abort(); }}><span aria-hidden="true">■</span></button> : <button key="send-message" type="submit" className="send-button bg-[var(--accent)] hover:bg-[var(--accent-light)] text-white shadow-md" aria-label="Send message" disabled={busy || !input.trim()}>
                         {busy ? <LoaderCircle className="spin" size={18} /> : <ArrowUp size={19} />}
                       </button>}
                     </div>
@@ -1349,7 +1476,7 @@ function Workspace() {
               </>
             ) : (
               <div className="remix-panel">
-                <h1 className="text-2xl font-bold text-white mb-1">Give your content a second life.</h1>
+                <h1 className="text-2xl font-bold text-[var(--text)] mb-1 font-heading">Give your content a second life.</h1>
                 <p className="muted">Choose a source, pick a format, and let your brand lead the way.</p>
 
                 <form onSubmit={remix} className="remix-form">
@@ -1475,15 +1602,15 @@ function BrandSettings() {
   return (
     <Shell>
       <main className="brand-page max-w-6xl mx-auto py-8 px-4 sm:px-6">
-        <Link className="back-link inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors mb-6" to="/dashboard">
+        <Link className="back-link inline-flex items-center gap-2 text-sm text-[var(--muted)] hover:text-[var(--text)] transition-colors mb-6" to="/dashboard">
           <ArrowLeft size={16} />Back to projects
         </Link>
         <div className="page-title flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white mb-2">Your brand. Your voice.</h1>
-            <p className="text-zinc-400 text-sm">Give every creation a familiar direction, without repeating yourself.</p>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[var(--text)] mb-2 font-heading">Your brand. Your voice.</h1>
+            <p className="text-[var(--muted)] text-sm">Give every creation a familiar direction, without repeating yourself.</p>
           </div>
-          <span className="brand-emblem flex items-center justify-center w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-400 shrink-0">
+          <span className="brand-emblem flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--soft)] border border-[var(--accent)]/30 text-[var(--accent)] shrink-0">
             <Palette size={28} />
           </span>
         </div>
@@ -1492,9 +1619,9 @@ function BrandSettings() {
           <Spinner />
         ) : (
           <div className="brand-layout grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
-            <form onSubmit={save} className="brand-form bg-[#121217] border border-white/[0.08] p-6 md:p-8 rounded-2xl shadow-xl">
-              <div className="mb-6 pb-3 border-b border-white/[0.06]">
-                <h2 className="text-lg font-semibold text-white">The essentials</h2>
+            <form onSubmit={save} className="brand-form bg-[var(--surface)] border border-[var(--border)] p-6 md:p-8 rounded-2xl shadow-sm">
+              <div className="mb-6 pb-3 border-b border-[var(--border)]">
+                <h2 className="text-lg font-semibold text-[var(--text)] font-heading">The essentials</h2>
               </div>
 
               <Field label="Brand name">
@@ -1543,8 +1670,8 @@ function BrandSettings() {
                 </Field>
                 <BrandColorPreview colors={colorInput} />
               </div>
-              <div className="flex items-center justify-between mt-8 mb-6 pb-3 border-b border-white/[0.06]">
-                <h2 className="guidelines-heading text-lg font-semibold text-white">The creative guardrails</h2>
+              <div className="flex items-center justify-between mt-8 mb-6 pb-3 border-b border-[var(--border)]">
+                <h2 className="guidelines-heading text-lg font-semibold text-[var(--text)] font-heading">The creative guardrails</h2>
               </div>
 
               <Field label="Brand guidelines">
@@ -1559,21 +1686,21 @@ function BrandSettings() {
 
               {error && <p className="inline-error" role="alert">{error}</p>}
 
-              <button disabled={busy} className="button primary mt-4 bg-orange-500 hover:bg-orange-600 shadow-[0_0_20px_rgba(255,94,30,0.3)] text-white">
+              <button disabled={busy} className="button primary mt-4">
                 {busy ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}Save brand kit
               </button>
             </form>
 
-            <aside className="brand-explainer bg-[#121217] border border-white/[0.08] p-6 rounded-2xl self-start shadow-xl">
-              <Sparkles size={22} className="text-orange-400 mb-3" />
-              <h2 className="text-xl font-bold text-white mb-2 leading-tight">One voice.<br />Every project.</h2>
-              <p className="text-xs text-zinc-400 mb-6 leading-relaxed">Your saved brand kit is included in every AI chat and remix request across your account.</p>
+            <aside className="brand-explainer bg-[var(--surface)] border border-[var(--border)] p-6 rounded-2xl self-start shadow-sm">
+              <Sparkles size={22} className="text-[var(--accent)] mb-3" />
+              <h2 className="text-xl font-bold text-[var(--text)] mb-2 leading-tight font-heading">One voice.<br />Every project.</h2>
+              <p className="text-xs text-[var(--muted)] mb-6 leading-relaxed">Your saved brand kit is included in every AI chat and remix request across your account.</p>
               <div className="space-y-3">
-                <div className="brand-rule text-xs text-zinc-300 flex items-center gap-2"><Check size={15} className="text-emerald-400 shrink-0" />Your tone, not a generic voice</div>
-                <div className="brand-rule text-xs text-zinc-300 flex items-center gap-2"><Check size={15} className="text-emerald-400 shrink-0" />Audience-aware content</div>
-                <div className="brand-rule text-xs text-zinc-300 flex items-center gap-2"><Check size={15} className="text-emerald-400 shrink-0" />Guidelines applied automatically</div>
+                <div className="brand-rule text-xs text-[var(--text)] flex items-center gap-2"><Check size={15} className="text-emerald-500 shrink-0" />Your tone, not a generic voice</div>
+                <div className="brand-rule text-xs text-[var(--text)] flex items-center gap-2"><Check size={15} className="text-emerald-500 shrink-0" />Audience-aware content</div>
+                <div className="brand-rule text-xs text-[var(--text)] flex items-center gap-2"><Check size={15} className="text-emerald-500 shrink-0" />Guidelines applied automatically</div>
               </div>
-              <p className="brand-footnote text-[11px] text-zinc-500 pt-4 border-t border-white/[0.06] mt-6 leading-relaxed">Colors guide the creative brief. CreatorForge generates text, not images or videos.</p>
+              <p className="brand-footnote text-[11px] text-[var(--muted)] pt-4 border-t border-[var(--border)] mt-6 leading-relaxed">Colors guide the creative brief. CreatorForge generates text, not images or videos.</p>
             </aside>
           </div>
         )}

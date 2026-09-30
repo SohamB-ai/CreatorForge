@@ -25,6 +25,7 @@
   --soft: rgba(201, 169, 98, 0.12);
   --input: #251E19;
   --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(201, 169, 98, 0.08);
+  --grid-line: rgba(255, 255, 255, 0.035);
   font-family: 'Crimson Pro', Georgia, serif;
   font-size: 15px;
   background: var(--bg);
@@ -57,6 +58,7 @@
   --soft: rgba(142, 107, 35, 0.10);
   --input: #FCFBF9;
   --card-shadow: 0 4px 20px -2px rgba(42, 34, 27, 0.08), 0 2px 6px -1px rgba(42, 34, 27, 0.04);
+  --grid-line: rgba(142, 107, 35, 0.05);
 }
 
 /* Atmosphere Vignette & Paper Grain */
@@ -584,12 +586,22 @@ input:focus, textarea:focus, select:focus {
   color: var(--text);
   max-height: 85vh;
   overflow: auto;
+  box-shadow: 0 24px 60px rgba(31, 26, 22, 0.25);
+}
+
+:root[data-theme="dark"] .modal,
+.dark .modal {
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
 }
 
 .modal::backdrop {
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(31, 26, 22, 0.5);
   backdrop-filter: blur(6px);
+}
+
+:root[data-theme="dark"] .modal::backdrop,
+.dark .modal::backdrop {
+  background: rgba(0, 0, 0, 0.7);
 }
 
 .modal-header {
@@ -687,7 +699,7 @@ input:focus, textarea:focus, select:focus {
 
 .hero h1 span {
   color: var(--accent);
-  background: linear-gradient(135deg, #ff9900, #ff5e1e);
+  background: var(--brass-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -761,8 +773,8 @@ input:focus, textarea:focus, select:focus {
 
 .image-tile {
   padding: 0;
-  background: #18181b;
-  color: #fff;
+  background: var(--elevated);
+  color: var(--text);
   border: 1px solid var(--border);
 }
 
@@ -771,13 +783,14 @@ input:focus, textarea:focus, select:focus {
   height: 110px;
   object-fit: cover;
   object-position: center;
-  filter: brightness(0.85);
+  filter: brightness(0.92);
 }
 
 .image-tile > span {
   padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--surface);
   backdrop-filter: blur(4px);
+  border-top: 1px solid var(--border);
 }
 
 .waveform {
@@ -791,7 +804,7 @@ input:focus, textarea:focus, select:focus {
 .waveform i {
   display: block;
   width: 3.5px;
-  background: linear-gradient(to top, #d97706, #fbbf24);
+  background: var(--brass-gradient);
   border-radius: 4px;
   animation: pulse-wave 1.4s ease-in-out infinite alternate;
 }
@@ -802,13 +815,15 @@ input:focus, textarea:focus, select:focus {
 }
 
 .audio-tile {
-  background: #1c1917;
-  color: #fef3c7;
+  background: var(--elevated);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .doc-tile {
-  background: #18181b;
-  color: #e4e4e7;
+  background: var(--elevated);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .document-lines {
@@ -821,7 +836,8 @@ input:focus, textarea:focus, select:focus {
 .document-lines i {
   display: block;
   height: 3.5px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--border-strong);
+  opacity: 0.35;
   border-radius: 4px;
 }
 
@@ -831,8 +847,9 @@ input:focus, textarea:focus, select:focus {
 .document-lines i:nth-child(4) { width: 45%; }
 
 .video-tile {
-  background: #1e1b2e;
-  color: #c4b5fd;
+  background: var(--elevated);
+  color: var(--text);
+  border: 1px solid var(--border);
   align-items: flex-start;
 }
 
@@ -2516,8 +2533,8 @@ input:focus, textarea:focus, select:focus {
 .bg-grid-pattern {
   background-size: 32px 32px;
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
 }
 
 .telemetry-chip {
@@ -2546,3 +2563,24 @@ input:focus, textarea:focus, select:focus {
   color: #34d399;
   background: rgba(16, 185, 129, 0.08);
 }
+
+/* GSAP & Interactive Micro-Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.will-change-transform {
+  will-change: transform;
+}
+

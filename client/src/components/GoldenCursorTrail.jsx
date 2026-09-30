@@ -209,12 +209,15 @@ export function GoldenCursorTrail() {
         });
       }
 
+      // Detect light mode for blend mode compatibility
+      const isLight = document.documentElement.dataset.theme === 'light' || document.documentElement.classList.contains('light');
+
       // Draw Golden Threads
       if (trailPoints.length > 2) {
         ctx.save();
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.globalCompositeOperation = 'screen';
+        ctx.globalCompositeOperation = isLight ? 'source-over' : 'screen';
 
         strands.forEach((strand) => {
           ctx.beginPath();
@@ -238,8 +241,8 @@ export function GoldenCursorTrail() {
           // Shimmering thread glow
           ctx.strokeStyle = strand.color;
           ctx.lineWidth = strand.width;
-          ctx.shadowColor = '#FFD700';
-          ctx.shadowBlur = 9;
+          ctx.shadowColor = isLight ? 'rgba(184, 139, 46, 0.35)' : '#FFD700';
+          ctx.shadowBlur = isLight ? 4 : 9;
           ctx.stroke();
 
           // Subtle secondary bright core line
@@ -257,7 +260,7 @@ export function GoldenCursorTrail() {
       // Render Glitter & Sparkle Particles
       if (particles.length > 0) {
         ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalCompositeOperation = isLight ? 'source-over' : 'lighter';
 
         for (let i = particles.length - 1; i >= 0; i--) {
           const p = particles[i];
