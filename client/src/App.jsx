@@ -7,31 +7,24 @@ import {
   AudioLines,
   Check,
   ChevronRight,
-  Copy,
   FileText,
-  Flame,
   Folder,
   Image,
   LayoutGrid,
   LoaderCircle,
   LogOut,
   MessageSquare,
-  Moon,
-  MoreHorizontal,
   Palette,
   Pencil,
   Plus,
   Search,
   Sparkles,
-  Sun,
   Trash2,
   Upload,
   Video,
   WandSparkles,
   X,
   BookOpen,
-  Feather,
-  Scroll,
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -42,22 +35,22 @@ import ChatMessageActions from './ChatMessageActions.jsx';
 import Onboarding, { CreatorWelcome } from './Onboarding.jsx';
 import Skills from './Skills.jsx';
 import { skillById } from '../../shared/skills.js';
-import { BorderBeam } from './components/BorderBeam.jsx';
 import { BentoGrid } from './components/BentoGrid.jsx';
 import { TrustWall } from './components/TrustWall.jsx';
+import { ResultsSection } from './components/ResultsSection.jsx';
+import { ProblemSection } from './components/ProblemSection.jsx';
+import { HowItWorksSection } from './components/HowItWorksSection.jsx';
+import { FaqSection } from './components/FaqSection.jsx';
+import { Footer } from './components/Footer.jsx';
 import { ShimmerButton } from './components/ShimmerButton.jsx';
 import { BrandColorPreview } from './components/BrandColorPreview.jsx';
 import { OrnateDivider } from './components/OrnateDivider.jsx';
-import { AtmosphereOverlay } from './components/AtmosphereOverlay.jsx';
-import { GoldenCursorTrail } from './components/GoldenCursorTrail.jsx';
-import { ScrollProgress } from './components/ScrollProgress.jsx';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const Auth = createContext(null);
-
 const Toast = createContext(null);
 const fileLimit = 5 * 1024 * 1024;
 const mediaIcons = { image: Image, audio: AudioLines, video: Video, document: FileText, text: FileText };
@@ -73,12 +66,15 @@ function Logo() {
       aria-label="CreatorForge"
       title="CreatorForge"
     >
-      <span className="w-11 h-11 sm:w-12 sm:h-12 rounded-[6px] border-2 border-[var(--accent)] bg-[var(--surface)] flex items-center justify-center shadow-[0_0_14px_var(--soft)] group-hover:border-[var(--accent-light)] group-hover:shadow-[0_0_22px_var(--soft)] group-hover:scale-105 transition-all duration-300">
+      <span className="w-9 h-9 rounded-[2.88px] border border-[var(--color-ink-black)] bg-[var(--color-ink-black)] flex items-center justify-center transition-all duration-150">
         <img
           src="/assets/pen_and_sword_badge.svg"
           alt="CreatorForge insignia"
-          className="w-7 h-7 sm:w-8 sm:h-8 filter brightness-105 drop-shadow"
+          className="w-5 h-5 filter brightness-110 invert"
         />
+      </span>
+      <span className="font-canopee tracking-[-0.03em] font-normal text-xl text-[var(--color-ink-black)]">
+        CREATORFORGE
       </span>
     </Link>
   );
@@ -87,7 +83,7 @@ function Logo() {
 function Spinner({ label = 'Loading your workspace…' }) {
   return (
     <div className="loading" role="status">
-      <LoaderCircle className="spin text-orange-500" size={22} />
+      <LoaderCircle className="spin text-[var(--color-ember-orange)]" size={20} />
       <span>{label}</span>
     </div>
   );
@@ -127,7 +123,7 @@ function Dialog({ title, onClose, children }) {
       <div className="modal-header">
         <h2>{title}</h2>
         <button className="icon-button" aria-label="Close dialog" onClick={onClose}>
-          <X size={20} />
+          <X size={18} />
         </button>
       </div>
       {children}
@@ -151,19 +147,14 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
-  const [light, setLight] = useState(() => localStorage.getItem('creatorforge.theme') === 'light');
 
+  // Enforce dark broadsheet theme strictly
   useEffect(() => {
-    document.documentElement.dataset.theme = light ? 'light' : 'dark';
-    if (light) {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.classList.add('light');
-    } else {
-      document.documentElement.classList.remove('light');
-      document.documentElement.classList.add('dark');
-    }
-    localStorage.setItem('creatorforge.theme', light ? 'light' : 'dark');
-  }, [light]);
+    document.documentElement.dataset.theme = 'dark';
+    document.documentElement.classList.remove('light');
+    document.documentElement.classList.add('dark');
+    localStorage.setItem('creatorforge.theme', 'dark');
+  }, []);
 
   useEffect(() => {
     const logout = () => {
@@ -201,15 +192,13 @@ export default function App() {
       localStorage.removeItem('creatorforge.token');
       setUser(null);
     },
-    light,
-    toggleTheme: () => setLight((value) => !value),
+    light: true,
+    toggleTheme: () => {},
   };
 
   return (
     <Auth.Provider value={auth}>
       <Toast.Provider value={(message, kind = 'success') => setToast({ message, kind })}>
-        <ScrollProgress />
-        <AtmosphereOverlay />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<AuthPage />} />
@@ -223,10 +212,10 @@ export default function App() {
         </Routes>
         {toast && (
           <div className={`toast ${toast.kind}`} role={toast.kind === 'error' ? 'alert' : 'status'}>
-            {toast.kind === 'success' && <Check size={18} className="text-emerald-400" />}
+            {toast.kind === 'success' && <Check size={16} className="text-[var(--color-ink-black)]" />}
             <span>{toast.message}</span>
             <button className="icon-button" aria-label="Dismiss notification" onClick={() => setToast(null)}>
-              <X size={16} />
+              <X size={15} />
             </button>
           </div>
         )}
@@ -240,51 +229,37 @@ function Protected({ children }) {
   return auth.loading ? <Spinner /> : auth.user ? children : <Navigate to="/login" replace />;
 }
 
-function ThemeButton() {
-  const auth = useContext(Auth);
-  return (
-    <button
-      className="icon-button"
-      onClick={auth.toggleTheme}
-      aria-label={`Switch to ${auth.light ? 'dark' : 'light'} theme`}
-    >
-      {auth.light ? <Moon size={18} /> : <Sun size={18} />}
-    </button>
-  );
-}
-
 function Shell({ children, workspace = false }) {
   const auth = useContext(Auth);
   const navigate = useNavigate();
 
   return (
     <div className={`app-shell ${workspace ? 'workspace-shell' : ''}`}>
-      <header className="app-header border-b border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-md">
+      <header className="app-header border-b border-[var(--color-ink-black)] bg-[var(--color-parchment)]">
         <Logo />
-        <nav aria-label="Main navigation" className="font-display text-xs tracking-wider">
-          <Link to="/dashboard" className="nav-link text-[var(--text)] hover:text-[var(--accent)]" aria-label="Projects">
-            <LayoutGrid size={16} className="text-[var(--accent)]" />
-            <span>Archives</span>
+        <nav aria-label="Main navigation" className="font-editorial-new text-sm">
+          <Link to="/dashboard" className="nav-link text-[var(--color-ink-black)] hover:bg-[var(--color-bone-cream)]" aria-label="Projects">
+            <LayoutGrid size={15} className="text-[var(--color-ink-black)]" />
+            <span>Projects</span>
           </Link>
-          <Link to="/settings/brandkit" className="nav-link text-[var(--text)] hover:text-[var(--accent)]" aria-label="Brand kit">
-            <Palette size={16} className="text-[var(--accent)]" />
-            <span>Lexicon</span>
+          <Link to="/settings/brandkit" className="nav-link text-[var(--color-ink-black)] hover:bg-[var(--color-bone-cream)]" aria-label="Brand Manual">
+            <Palette size={15} className="text-[var(--color-ink-black)]" />
+            <span>Brand Manual</span>
           </Link>
         </nav>
         <div className="account flex items-center gap-3">
-          <ThemeButton />
-          <span className="avatar bg-[var(--soft)] border border-[var(--accent)]/40 text-[var(--accent)] font-semibold font-display" title={auth.user.name}>
+          <span className="avatar bg-[var(--color-ink-black)] border border-[var(--color-ink-black)] text-[var(--color-parchment)] font-normal font-editorial-new rounded-[2.88px]" title={auth.user.name}>
             {auth.user.name.slice(0, 1).toUpperCase()}
           </span>
           <button
-            className="icon-button hover:text-[var(--accent)]"
+            className="icon-button hover:bg-[var(--color-bone-cream)]"
             aria-label="Sign out"
             onClick={() => {
               auth.logout();
               navigate('/login');
             }}
           >
-            <LogOut size={18} />
+            <LogOut size={16} />
           </button>
         </div>
       </header>
@@ -318,7 +293,6 @@ function Landing() {
     return () => clearInterval(timer);
   }, [heroVoicePlaying]);
 
-  // GSAP ScrollTrigger & Stagger Choreography
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -328,62 +302,28 @@ function Landing() {
       if (heroCopyRef.current) {
         gsap.fromTo(
           heroCopyRef.current.children,
-          { opacity: 0, y: 26 },
+          { opacity: 0, y: 20 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.75,
+            stagger: 0.1,
+            ease: 'power2.out',
+          }
+        );
+      }
+
+      // Hero editorial desk entrance
+      if (heroVisualRef.current) {
+        gsap.fromTo(
+          heroVisualRef.current,
+          { opacity: 0, y: 28 },
           {
             opacity: 1,
             y: 0,
             duration: 0.85,
-            stagger: 0.12,
-            ease: 'power3.out',
-          }
-        );
-      }
-
-      // Hero archival desk entrance
-      if (heroVisualRef.current) {
-        gsap.fromTo(
-          heroVisualRef.current,
-          { opacity: 0, y: 38, scale: 0.96 },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 1.05,
-            delay: 0.2,
-            ease: 'power3.out',
-          }
-        );
-
-        // Smooth physical depth parallax as user scrolls down
-        if (heroSectionRef.current) {
-          gsap.to(heroVisualRef.current, {
-            yPercent: 10,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: heroSectionRef.current,
-              start: 'top top',
-              end: 'bottom top',
-              scrub: true,
-            },
-          });
-        }
-      }
-
-      // Volume IV: Proclamation reveal
-      if (proclamationRef.current) {
-        gsap.fromTo(
-          proclamationRef.current,
-          { opacity: 0, y: 35, scale: 0.95 },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 0.95,
+            delay: 0.15,
             ease: 'power2.out',
-            scrollTrigger: {
-              trigger: proclamationRef.current,
-              start: 'top 85%',
-            },
           }
         );
       }
@@ -399,128 +339,138 @@ function Landing() {
   };
 
   return (
-    <div className="landing max-w-6xl mx-auto px-6 py-4">
-      <GoldenCursorTrail />
-      <header className="landing-header border-b border-[var(--border)] py-5 flex items-center justify-between">
+    <div className="landing max-w-6xl mx-auto px-6 py-2">
+      {/* Editorial Header Bar */}
+      <header className="landing-header border-b border-[var(--color-ink-black)] py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="font-editorial-new text-xs uppercase tracking-[-0.01em] text-[var(--color-charcoal)]">
+            Issue 01 · Studio Edition
+          </span>
+        </div>
         <Logo />
-        <div className="landing-actions flex items-center gap-6">
-          <ThemeButton />
+        <div className="landing-actions flex items-center gap-4">
           <Link
-            className="font-display text-xs uppercase tracking-[0.2em] text-[var(--accent)] hover:tracking-[0.26em] hover:text-[var(--accent-light)] transition-all flex items-center gap-2"
+            className="font-editorial-new text-sm text-[var(--color-ink-black)] hover:text-[var(--color-pure-black)] underline underline-offset-4 flex items-center gap-1.5"
             to={auth.user ? '/dashboard' : '/login'}
           >
-            {auth.user ? 'Enter Scriptorium' : 'Access Archives'}
+            {auth.user ? 'Enter Studio' : 'Sign In'}
             <ArrowRight size={14} />
           </Link>
         </div>
       </header>
 
       <main>
-        {/* Volume I: The Scriptorium Hero */}
-        <section ref={heroSectionRef} className="hero py-16 md:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        {/* Section I: Editorial Broadsheet Hero */}
+        <section ref={heroSectionRef} className="hero py-14 md:py-20 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div ref={heroCopyRef} className="hero-copy lg:col-span-6 will-change-transform">
-            <span className="font-display text-[11px] font-semibold tracking-[0.3em] uppercase text-[var(--accent)] mb-4 block">
-              Volume I · The Scriptorium
+            <span className="font-editorial-new text-sm uppercase tracking-[-0.01em] text-[var(--color-ember-orange)] mb-3 block">
+              Dispatch 01 · The Editorial Desk
             </span>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-medium tracking-tight text-[var(--text)] leading-[1.08] mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-canopee font-normal tracking-[-0.04em] text-[var(--color-ink-black)] leading-[0.88] mb-5">
               Many sources.<br />
               One enduring<br />
-              <span className="text-[var(--accent)] italic font-normal">scholarship.</span>
+              <span className="text-[var(--color-ember-orange)] italic font-normal">broadsheet.</span>
             </h1>
-            <p className="drop-cap text-lg text-[var(--muted)] font-body leading-relaxed max-w-lg mb-8">
-              Gather your archival plates, vocal dictations, film fragments, and historical folios into one consecrated study. Transform scattered thoughts into timeless manuscripts in your distinctive voice.
+            <p className="text-lg text-[var(--color-charcoal)] font-editorial-new leading-[1.35] max-w-lg mb-7">
+              Gather interview tapes, photographic proofs, research documents, and audio notes into one dedicated studio. Transform raw materials into publication-ready dispatches in your distinct voice.
             </p>
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3.5">
               <ShimmerButton to={next} className="primary">
-                Inscribe Your Work <ArrowRight size={16} />
+                Start Composing <ArrowRight size={15} />
               </ShimmerButton>
               <Link to={auth.user ? '/dashboard' : '/login'} className="button secondary">
-                Consult Archives
+                Open Project Desk
               </Link>
             </div>
           </div>
 
           <div ref={heroVisualRef} className="hero-visual lg:col-span-6 relative will-change-transform">
-            <div className="ornate-frame p-6 md:p-8 rounded-[4px] border border-[var(--border)] bg-[var(--surface)] shadow-2xl transition-colors">
-              <div className="flex items-center justify-between border-b border-[var(--border)] pb-3 mb-5 font-display text-[10.5px] uppercase tracking-[0.22em] text-[var(--accent)]">
+            <div className="p-6 md:p-7 rounded-[11.52px] border border-[var(--color-ink-black)] bg-[var(--color-bone-cream)] shadow-[var(--shadow-sm)]">
+              <div className="flex items-center justify-between border-b border-[var(--color-ink-black)] pb-2.5 mb-4 font-editorial-new text-xs uppercase tracking-[-0.01em] text-[var(--color-ink-black)]">
                 <span className="flex items-center gap-2">
-                  <BookOpen size={14} /> The Archival Desk
+                  <BookOpen size={14} /> Folio Proofs · Active Issue
                 </span>
-                <span className="text-[var(--muted)]">Folio 01 · Active</span>
+                <span className="new-badge">PROOF 01</span>
               </div>
 
-              {/* Cathedral Arch-Topped Feature Plate */}
-              <div className="arch-top overflow-hidden border border-[var(--border)] bg-[var(--elevated)] mb-5 relative group">
+              {/* Full-bleed illustration card with 0px radius */}
+              <div className="overflow-hidden border border-[var(--color-ink-black)] bg-[var(--color-parchment)] mb-4 relative rounded-none">
                 <img
                   src="/assets/creative_studio_art.jpg"
-                  alt="Archival study and creative references"
-                  className="w-full h-56 object-cover object-center sepia-reveal hover:scale-105 transition-all duration-700"
+                  alt="Editorial study and creative references"
+                  className="w-full h-52 object-cover object-center rounded-none"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface)]/90 via-transparent to-transparent opacity-80" />
-                <span className="absolute bottom-3 left-4 inline-flex items-center gap-2 font-display text-[10px] uppercase tracking-[0.16em] text-[var(--text)] bg-[var(--surface)]/90 px-2.5 py-1 rounded-[3px] border border-[var(--border)] backdrop-blur-sm shadow-sm">
-                  <Image size={12} className="text-[var(--accent)]" /> Reference Plate · Oil on Canvas
+                <span className="absolute bottom-2.5 left-3 inline-flex items-center gap-1.5 font-editorial-new text-xs uppercase tracking-[-0.01em] text-[var(--color-ink-black)] bg-[var(--color-parchment)] px-2.5 py-1 rounded-[2.88px] border border-[var(--color-ink-black)] shadow-[var(--shadow-sm)]">
+                  <Image size={13} className="text-[var(--color-ember-orange)]" /> Photographic Proof · Plate 01
                 </span>
               </div>
 
               {/* Multi-source cards grid */}
-              <div className="grid grid-cols-2 gap-3 mb-5">
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 <div
                   onClick={() => setHeroVoicePlaying(!heroVoicePlaying)}
-                  className="p-3 rounded-[3px] bg-[var(--elevated)] border border-[var(--border)] flex flex-col justify-between shadow-sm cursor-pointer hover:border-[var(--accent)]/50 transition-colors group"
-                  title={heroVoicePlaying ? 'Pause voice dictation' : 'Click to preview voice dictation'}
+                  className="p-3 rounded-[2.88px] bg-[var(--color-parchment)] border border-[var(--color-ink-black)] flex flex-col justify-between shadow-[var(--shadow-sm)] cursor-pointer hover:bg-[#dad5d0] transition-colors"
+                  title={heroVoicePlaying ? 'Pause voice recording' : 'Preview voice recording'}
                 >
-                  <div className="flex items-center justify-between text-xs text-[var(--muted)] font-display">
-                    <span className="flex items-center gap-1.5 group-hover:text-[var(--accent)] transition-colors">
-                      <AudioLines size={12} className="text-[var(--accent)]" /> Voice Record
+                  <div className="flex items-center justify-between text-xs text-[var(--color-charcoal)] font-editorial-new">
+                    <span className="flex items-center gap-1.5 text-[var(--color-ink-black)]">
+                      <AudioLines size={13} className="text-[var(--color-ember-orange)]" /> Voice Tape
                     </span>
-                    <span className="font-mono text-[10px] text-[var(--accent)]">{formatHeroTimer(heroVoiceSec)}</span>
+                    <span className="font-mono text-xs text-[var(--color-ink-black)]">{formatHeroTimer(heroVoiceSec)}</span>
                   </div>
-                  <div className="h-6 flex items-center gap-1 mt-2">
+                  <div className="h-5 flex items-center gap-1 mt-2">
                     {heroWaves.map((h, i) => (
                       <span
                         key={i}
                         style={{ height: `${h}%` }}
-                        className={`w-1 rounded-[1px] transition-all duration-150 ${
+                        className={`w-1 rounded-none transition-all duration-150 ${
                           heroVoicePlaying
-                            ? 'bg-[var(--accent)] shadow-[0_0_4px_rgba(201,169,98,0.6)]'
-                            : 'bg-[var(--accent)] opacity-70 group-hover:opacity-100'
+                            ? 'bg-[var(--color-ember-orange)]'
+                            : 'bg-[var(--color-ink-black)] opacity-60'
                         }`}
                       />
                     ))}
                   </div>
                 </div>
 
-                <div className="p-3 rounded-[3px] bg-[var(--elevated)] border border-[var(--border)] flex flex-col justify-between shadow-sm">
-                  <div className="flex items-center justify-between text-xs text-[var(--muted)] font-display">
-                    <span className="flex items-center gap-1.5"><FileText size={12} className="text-[var(--accent)]" /> Research Brief</span>
-                    <span className="text-[10px] text-[var(--muted)]">V. 3.2</span>
+                <div className="p-3 rounded-[2.88px] bg-[var(--color-parchment)] border border-[var(--color-ink-black)] flex flex-col justify-between shadow-[var(--shadow-sm)]">
+                  <div className="flex items-center justify-between text-xs text-[var(--color-charcoal)] font-editorial-new">
+                    <span className="flex items-center gap-1.5 text-[var(--color-ink-black)]"><FileText size={13} className="text-[var(--color-ember-orange)]" /> Research Brief</span>
+                    <span className="text-xs text-[var(--color-charcoal)]">Rev. 2</span>
                   </div>
-                  <div className="space-y-1.5 mt-2">
-                    <div className="h-1 bg-[var(--border)] w-full rounded-[1px]" />
-                    <div className="h-1 bg-[var(--border)] w-3/4 rounded-[1px]" />
-                    <div className="h-1 bg-[var(--accent)]/40 w-1/2 rounded-[1px]" />
+                  <div className="space-y-1 mt-2">
+                    <div className="h-1 bg-[var(--color-ink-black)] w-full rounded-none" />
+                    <div className="h-1 bg-[var(--color-ink-black)] w-3/4 rounded-none opacity-60" />
+                    <div className="h-1 bg-[var(--color-ember-orange)] w-1/2 rounded-none" />
                   </div>
                 </div>
               </div>
 
               {/* Synthesis result indicator */}
-              <div className="p-3.5 rounded-[3px] bg-[var(--elevated)] border border-[var(--accent)]/40 flex items-center justify-between shadow-sm">
+              <div className="p-3.5 rounded-[2.88px] bg-[var(--color-parchment)] border border-[var(--color-ink-black)] flex items-center justify-between shadow-[var(--shadow-sm)]">
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-full border border-[var(--accent)] bg-[var(--surface)] flex items-center justify-center text-[var(--accent)] shadow-sm">
-                    <Sparkles size={15} />
+                  <span className="w-8 h-8 rounded-[2.88px] border border-[var(--color-ink-black)] bg-[var(--color-ink-black)] flex items-center justify-center text-[var(--color-parchment)]">
+                    <Sparkles size={14} />
                   </span>
                   <div>
-                    <strong className="block text-sm font-heading font-medium text-[var(--text)] tracking-normal">
-                      Context becomes canon.
+                    <strong className="block text-sm font-canopee font-normal text-[var(--color-ink-black)] tracking-[-0.02em]">
+                      Raw research becomes published copy.
                     </strong>
-                    <small className="text-xs text-[var(--muted)] font-body">
-                      Synthesized into high-impact essays and scripts
+                    <small className="text-xs text-[var(--color-charcoal)] font-editorial-new">
+                      Synthesized into high-impact dispatches, threads & scripts
                     </small>
                   </div>
                 </div>
-                <ArrowUp size={16} className="text-[var(--accent)]" />
+                <ArrowUp size={16} className="text-[var(--color-ink-black)]" />
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Display Banner Block — Signature Miranda Oversize Typography */}
+        <section className="display-banner my-10 rounded-[2.88px]">
+          <div className="display-banner-text">
+            CREATORFORGE STUDIO
           </div>
         </section>
 
@@ -534,39 +484,37 @@ function Landing() {
 
         <OrnateDivider glyph="✤" />
 
-        {/* Volume IV: The Proclamation / Call to Action */}
+        {/* Section IV: The Call to Action */}
         <section
           ref={proclamationRef}
-          className="my-20 p-10 md:p-16 rounded-[4px] bg-[var(--surface)] border border-[var(--border)] text-center relative ornate-frame max-w-4xl mx-auto shadow-2xl overflow-hidden will-change-transform"
+          className="my-16 p-8 md:p-14 rounded-[11.52px] bg-[var(--color-bone-cream)] border border-[var(--color-ink-black)] text-center relative max-w-4xl mx-auto shadow-[var(--shadow-sm)] overflow-hidden will-change-transform"
         >
-          <BorderBeam size={260} duration={14} borderWidth={1.5} colorFrom="#FFE680" colorTo="#C9A962" />
-          <span className="font-display text-[10.5px] font-semibold tracking-[0.3em] uppercase text-[var(--accent)] mb-3 block">
-            Volume IV · The Proclamation
+          <span className="font-editorial-new text-sm uppercase tracking-[-0.01em] text-[var(--color-ember-orange)] mb-2.5 block">
+            Dispatch 04 · Ready to Compose
           </span>
-          <h2 className="text-3xl md:text-5xl font-heading font-medium tracking-tight text-[var(--text)] mb-4">
-            Ready to inscribe your creative legacy?
+          <h2 className="text-3xl md:text-5xl font-canopee font-normal tracking-[-0.035em] text-[var(--color-ink-black)] mb-3 leading-[0.95]">
+            Ready to publish your next piece?
           </h2>
-          <p className="text-[var(--muted)] font-body text-lg max-w-xl mx-auto mb-9 leading-relaxed">
-            Create your first project archive, deposit your research and vocal dictations, and craft with unyielding scholarly conviction.
+          <p className="text-[var(--color-charcoal)] font-editorial-new text-lg max-w-xl mx-auto mb-8 leading-[1.35]">
+            Create your project desk, deposit your research and recorded notes, and compose with publication-grade editorial rigor.
           </p>
           <div className="flex justify-center relative z-10">
             <ShimmerButton to={next} className="primary">
-              Commence Creation <ArrowRight size={16} />
+              Start Composing <ArrowRight size={16} />
             </ShimmerButton>
           </div>
         </section>
       </main>
 
-
-      <footer className="landing-footer flex flex-col sm:flex-row items-center justify-between py-10 border-t border-[var(--border)] text-xs font-body text-[var(--muted)] gap-4">
+      <footer className="landing-footer flex flex-col sm:flex-row items-center justify-between py-8 border-t border-[var(--color-ink-black)] text-xs font-editorial-new text-[var(--color-charcoal)] gap-4">
         <div className="flex items-center gap-3">
           <Logo />
-          <span className="font-display text-[10px] tracking-wider uppercase text-[var(--muted)]">
-            A sanctuary for source preservation and scholarly craft.
+          <span className="uppercase tracking-[-0.01em] text-[var(--color-charcoal)]">
+            A vintage broadsheet and multimodal studio.
           </span>
         </div>
-        <div className="font-display text-[10px] tracking-widest uppercase text-[var(--muted)]">
-          Anno Domini MMXXVI · CreatorForge · All rights reserved.
+        <div className="uppercase tracking-[-0.01em] text-[var(--color-charcoal)]">
+          © 2026 CreatorForge · All rights reserved.
         </div>
       </footer>
     </div>
@@ -603,42 +551,53 @@ function AuthPage({ register = false }) {
   }
 
   return (
-    <div className="auth-page">
-      <header className="border-b border-[var(--border)] py-4 flex items-center justify-between">
+    <div className="auth-page max-w-5xl mx-auto px-6 py-4">
+      <header className="border-b border-[var(--color-ink-black)] py-3.5 flex items-center justify-between">
         <Logo />
-        <ThemeButton />
+        <span className="font-editorial-new text-xs uppercase text-[var(--color-charcoal)]">
+          Editorial Access
+        </span>
       </header>
-      <main className="auth-layout max-w-5xl mx-auto py-12 px-4">
+      <main className="auth-layout py-10">
         <aside className="pr-4">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[var(--text)] mb-3 font-heading">Less scattered.<br />More creative.</h1>
-          <p className="text-[var(--muted)] text-base leading-relaxed">A home for your source material and the ideas it inspires.</p>
-          <div className="mt-8 rounded-xl overflow-hidden border border-[var(--border)] max-w-sm bg-[var(--surface)] shadow-md">
+          <span className="font-editorial-new text-xs uppercase tracking-[-0.01em] text-[var(--color-ember-orange)] mb-2 block">
+            The Newsroom Desk
+          </span>
+          <h1 className="text-4xl md:text-5xl font-canopee font-normal tracking-[-0.04em] text-[var(--color-ink-black)] mb-3 leading-[0.92]">
+            Less scattered.<br />More focused.
+          </h1>
+          <p className="text-[var(--color-charcoal)] font-editorial-new text-base leading-[1.35]">
+            A dedicated newsroom for your research materials, voice dictations, and editorial ideas.
+          </p>
+          <div className="mt-7 rounded-none overflow-hidden border border-[var(--color-ink-black)] max-w-sm bg-[var(--color-bone-cream)] shadow-[var(--shadow-sm)]">
             <img
               src="/assets/moodboard_photo.jpg"
               alt="Creative studio moodboard"
-              className="w-full h-52 object-cover filter brightness-95"
+              className="w-full h-48 object-cover rounded-none"
             />
           </div>
-          <div className="auth-source-icons flex items-center gap-4 mt-6 text-[var(--muted)]">
-            <Image size={20} className="hover:text-[var(--accent)] transition-colors" />
-            <AudioLines size={20} className="hover:text-[var(--accent)] transition-colors" />
-            <Video size={20} className="hover:text-[var(--accent)] transition-colors" />
-            <FileText size={20} className="hover:text-[var(--accent)] transition-colors" />
+          <div className="auth-source-icons flex items-center gap-4 mt-5 text-[var(--color-ink-black)]">
+            <Image size={18} className="hover:text-[var(--color-ember-orange)] transition-colors" />
+            <AudioLines size={18} className="hover:text-[var(--color-ember-orange)] transition-colors" />
+            <Video size={18} className="hover:text-[var(--color-ember-orange)] transition-colors" />
+            <FileText size={18} className="hover:text-[var(--color-ember-orange)] transition-colors" />
           </div>
         </aside>
 
-        <section className="auth-form bg-[var(--surface)] border border-[var(--border)] p-8 md:p-10 rounded-2xl shadow-[var(--card-shadow)] relative">
-          <h2 className="text-2xl font-bold text-[var(--text)] mb-2 font-heading">{register ? 'Make room for your ideas.' : 'Welcome back.'}</h2>
-          <p className="text-[var(--muted)] text-sm mb-6">
+        <section className="auth-form bg-[var(--color-bone-cream)] border border-[var(--color-ink-black)] p-7 md:p-8 rounded-[11.52px] shadow-[var(--shadow-sm)] relative">
+          <h2 className="text-2xl font-canopee font-normal text-[var(--color-ink-black)] mb-1.5 leading-[0.98]">
+            {register ? 'Create your publication account.' : 'Welcome back to the desk.'}
+          </h2>
+          <p className="text-[var(--color-charcoal)] font-editorial-new text-sm mb-5 leading-[1.35]">
             {register
-              ? 'Create an account to start your first project.'
-              : 'Your projects and creative direction await.'}
+              ? 'Register to start your first multimodal project.'
+              : 'Your project archives and brand manual await.'}
           </p>
 
           <GoogleSignIn
             key={register ? 'register' : 'login'}
             disabled={busy}
-            light={auth.light}
+            light={true}
             onBusyChange={setGoogleBusy}
             onSuccess={(data) => {
               auth.signIn(data);
@@ -646,7 +605,7 @@ function AuthPage({ register = false }) {
             }}
           />
 
-          <form onSubmit={submit} className="mt-4">
+          <form onSubmit={submit} className="mt-3">
             {register && (
               <Field label="Your name">
                 <input
@@ -654,7 +613,7 @@ function AuthPage({ register = false }) {
                   autoComplete="name"
                   required
                   maxLength={50}
-                  placeholder="How should we call you?"
+                  placeholder="e.g. Jane Miller"
                 />
               </Field>
             )}
@@ -664,7 +623,7 @@ function AuthPage({ register = false }) {
                 type="email"
                 required
                 autoComplete="email"
-                placeholder="you@example.com"
+                placeholder="you@publication.com"
               />
             </Field>
             <Field
@@ -683,15 +642,15 @@ function AuthPage({ register = false }) {
             {error && <p className="inline-error" role="alert">{error}</p>}
 
             <button disabled={busy || googleBusy} className="button primary full">
-              {busy ? <LoaderCircle className="spin" size={18} /> : null}
-              {register ? 'Create account' : 'Sign in'}
-              <ArrowRight size={18} />
+              {busy ? <LoaderCircle className="spin" size={16} /> : null}
+              {register ? 'Create account' : 'Sign in to desk'}
+              <ArrowRight size={16} />
             </button>
           </form>
 
-          <p className="auth-switch text-center text-xs text-[var(--muted)] mt-6">
-            {register ? 'Already have an account?' : 'New to CreatorForge?'}
-            <Link to={register ? '/login' : '/register'} className="text-[var(--accent)] hover:underline font-medium ml-1">
+          <p className="auth-switch text-center text-xs text-[var(--color-charcoal)] mt-5">
+            {register ? 'Already registered?' : 'New to CreatorForge?'}
+            <Link to={register ? '/login' : '/register'} className="text-[var(--color-ink-black)] underline font-normal ml-1">
               {register ? 'Sign in' : 'Create an account'}
             </Link>
           </p>
@@ -723,25 +682,25 @@ function ProjectForm({ project, onClose, onSaved }) {
   }
 
   return (
-    <Dialog title={project ? 'Edit project' : 'A new creative direction'} onClose={onClose}>
+    <Dialog title={project ? 'Edit project' : 'Create new project'} onClose={onClose}>
       <form onSubmit={submit}>
-        <Field label="Project name">
+        <Field label="Project title">
           <input
             autoFocus
             name="name"
             required
             maxLength={100}
             defaultValue={project?.name}
-            placeholder="e.g. Autumn launch campaign"
+            placeholder="e.g. October Feature Dispatch"
           />
         </Field>
-        <Field label="Brief" hint="A little context helps shape better content.">
+        <Field label="Brief & focus" hint="Provide background to guide the editorial synthesis.">
           <textarea
             name="description"
             rows={3}
             maxLength={500}
             defaultValue={project?.description}
-            placeholder="What are you creating, and who is it for?"
+            placeholder="What is this piece about, and what is its target channel?"
           />
         </Field>
         {error && <p className="inline-error" role="alert">{error}</p>}
@@ -750,7 +709,7 @@ function ProjectForm({ project, onClose, onSaved }) {
             Cancel
           </button>
           <button className="button primary" disabled={busy}>
-            {busy && <LoaderCircle className="spin" size={16} />}
+            {busy && <LoaderCircle className="spin" size={15} />}
             {project ? 'Save changes' : 'Create project'}
           </button>
         </div>
@@ -765,7 +724,7 @@ function DeleteDialog({ name, onClose, onDelete }) {
 
   return (
     <Dialog title="Delete this project?" onClose={onClose}>
-      <p className="muted">“{name}” and all of its media and chat history will be permanently deleted.</p>
+      <p className="muted font-editorial-new">“{name}” and all of its media and draft history will be permanently deleted.</p>
       {error && <p role="alert" className="inline-error">{error}</p>}
       <div className="modal-actions">
         <button className="button secondary" onClick={onClose}>
@@ -799,10 +758,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('All Projects');
   const [dialog, setDialog] = useState(null);
-
-  const categories = ['All Projects', 'Video Scripts', 'X Threads', 'Newsletters', 'Brand Kits'];
 
   async function load() {
     setLoading(true);
@@ -827,25 +783,29 @@ function Dashboard() {
   return (
     <Shell>
       <main className="dashboard max-w-6xl mx-auto py-8 px-4 sm:px-6">
-        <div className="page-title flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="page-title flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-7">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-[var(--text)] mb-2 font-heading">Let's make something, {auth.user.name.split(' ')[0]}.</h1>
-            <p className="text-[var(--muted)] text-sm">Every great piece of content starts with a place for your ideas.</p>
+            <h1 className="text-3xl font-canopee font-normal tracking-[-0.035em] text-[var(--color-ink-black)] mb-1 leading-[0.98]">
+              Editorial Desk · {auth.user.name.split(' ')[0]}
+            </h1>
+            <p className="text-[var(--color-charcoal)] font-editorial-new text-sm">
+              Manage your publication projects, uploaded assets, and drafted dispatches.
+            </p>
           </div>
           <button className="button primary shrink-0" onClick={() => setDialog({ type: 'create' })}>
-            <Plus size={18} />New project
+            <Plus size={16} />New project
           </button>
         </div>
 
         <CreatorWelcome onCreate={() => setDialog({ type: 'create' })} />
 
-        <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-[var(--border)]">
-          <span className="text-xs text-[var(--muted)] font-medium">
-            {projects.length} {projects.length === 1 ? 'project' : 'projects'}
+        <div className="flex items-center justify-between gap-4 mb-5 pb-3 border-b border-[var(--color-ink-black)]">
+          <span className="text-xs text-[var(--color-charcoal)] font-editorial-new">
+            {projects.length} {projects.length === 1 ? 'project on file' : 'projects on file'}
           </span>
 
           <label className="search min-w-[240px]">
-            <Search size={17} />
+            <Search size={15} />
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
@@ -863,54 +823,59 @@ function Dashboard() {
             <button className="button secondary" onClick={load}>Try again</button>
           </div>
         ) : !projects.length ? (
-          <div className="empty-state border border-[var(--border)] rounded-2xl bg-[var(--surface)]">
-            <div className="empty-illustration border border-[var(--accent)]/30 bg-[var(--soft)] text-[var(--accent)]">
-              <Folder size={42} strokeWidth={1.25} />
-              <span className="bg-[var(--accent)] text-[var(--surface)]"><Plus size={17} /></span>
+          <div className="empty-state border border-[var(--color-ink-black)] rounded-[11.52px] bg-[var(--color-bone-cream)]">
+            <div className="empty-illustration border border-[var(--color-ink-black)] bg-[var(--color-parchment)] text-[var(--color-ink-black)]">
+              <Folder size={36} strokeWidth={1.25} />
+              <span className="bg-[var(--color-ember-orange)] text-white"><Plus size={14} /></span>
             </div>
-            <h2>A blank canvas. A world of possibilities.</h2>
-            <p>Create a project, bring in your source material,<br className="desktop-only" /> and give your next idea a home.</p>
+            <h2 className="font-canopee font-normal text-2xl text-[var(--color-ink-black)]">A blank broadsheet.</h2>
+            <p className="font-editorial-new text-sm text-[var(--color-charcoal)]">
+              Create a project, deposit your reference materials,<br className="desktop-only" /> and begin drafting your piece.
+            </p>
             <button className="button primary" onClick={() => setDialog({ type: 'create' })}>
-              <Plus size={17} />Create your first project
+              <Plus size={15} />Create your first project
             </button>
-            <div className="supported-formats text-[var(--muted)]">
-              <Image size={17} />Images
-              <AudioLines size={17} />Audio
-              <Video size={17} />Video
-              <FileText size={17} />Documents
+            <div className="supported-formats text-[var(--color-charcoal)] font-editorial-new text-xs">
+              <Image size={15} />Images
+              <AudioLines size={15} />Audio
+              <Video size={15} />Video
+              <FileText size={15} />Manuscripts
             </div>
           </div>
         ) : visible.length ? (
           <div className="project-grid">
             {visible.map((project) => (
-              <article className="project-card border border-[var(--border)] bg-[var(--surface)] rounded-xl hover:border-[var(--accent)] shadow-sm hover:shadow-md transition-all group" key={project._id}>
+              <article className="project-card border border-[var(--color-ink-black)] bg-[var(--color-bone-cream)] rounded-[11.52px] shadow-[var(--shadow-sm)] group" key={project._id}>
                 <Link to={`/project/${project._id}`} className="project-main p-5">
-                  <div className="project-symbol bg-[var(--elevated)] border border-[var(--border)] text-[var(--accent)] rounded-lg p-2.5 inline-flex mb-3 group-hover:scale-105 transition-transform">
-                    <Folder size={20} strokeWidth={1.5} />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="project-symbol bg-[var(--color-ink-black)] text-[var(--color-parchment)] rounded-[2.88px] p-2 inline-flex">
+                      <Folder size={18} strokeWidth={1.5} />
+                    </div>
+                    <span className="new-badge">ACTIVE</span>
                   </div>
-                  <h3 className="text-lg font-semibold text-[var(--text)] group-hover:text-[var(--accent)] transition-colors font-heading">{project.name}</h3>
-                  <p className="text-[var(--muted)] text-sm line-clamp-2 my-2">{project.description || 'Your project workspace.'}</p>
-                  <div className="project-stats text-xs text-[var(--muted)] pt-2 border-t border-[var(--border)]">
-                    <span><FileText size={13} className="text-[var(--accent)]" />{project.mediaCount || 0} {project.mediaCount === 1 ? 'source' : 'sources'}</span>
-                    <span><MessageSquare size={13} className="text-[var(--muted)]" />{project.messageCount || 0} {project.messageCount === 1 ? 'message' : 'messages'}</span>
+                  <h3 className="text-xl font-canopee font-normal text-[var(--color-ink-black)] group-hover:text-[var(--color-ember-orange)] transition-colors leading-[0.98]">{project.name}</h3>
+                  <p className="text-[var(--color-charcoal)] font-editorial-new text-sm line-clamp-2 my-2 leading-[1.35]">{project.description || 'Editorial project workspace.'}</p>
+                  <div className="project-stats text-xs text-[var(--color-charcoal)] font-editorial-new pt-2 border-t border-[var(--color-ink-black)]/20">
+                    <span><FileText size={12} className="text-[var(--color-ink-black)]" />{project.mediaCount || 0} {project.mediaCount === 1 ? 'source' : 'sources'}</span>
+                    <span><MessageSquare size={12} className="text-[var(--color-charcoal)]" />{project.messageCount || 0} {project.messageCount === 1 ? 'dispatch' : 'dispatches'}</span>
                   </div>
                 </Link>
-                <div className="project-footer px-5 py-3 border-t border-[var(--border)] bg-[var(--elevated)] flex items-center justify-between text-xs text-[var(--muted)]">
-                  <span className="font-mono">Updated {new Date(project.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                <div className="project-footer px-5 py-2.5 border-t border-[var(--color-ink-black)] bg-[#c5beba] flex items-center justify-between text-xs text-[var(--color-charcoal)] font-editorial-new">
+                  <span>Updated {new Date(project.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                   <div className="flex items-center gap-1">
                     <button
-                      className="icon-button hover:text-[var(--text)]"
+                      className="icon-button hover:text-[var(--color-ink-black)]"
                       aria-label={`Edit ${project.name}`}
                       onClick={() => setDialog({ type: 'edit', project })}
                     >
-                      <Pencil size={15} />
+                      <Pencil size={14} />
                     </button>
                     <button
-                      className="icon-button hover:text-red-400"
+                      className="icon-button hover:text-[#c03f13]"
                       aria-label={`Delete ${project.name}`}
                       onClick={() => setDialog({ type: 'delete', project })}
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
@@ -918,17 +883,17 @@ function Dashboard() {
             ))}
           </div>
         ) : (
-          <p className="muted py-8 text-center">No projects match “{search}”.</p>
+          <p className="muted py-8 text-center font-editorial-new">No projects match “{search}”.</p>
         )}
 
-        <div className="dashboard-tip border border-[var(--border)] bg-[var(--surface)] rounded-xl my-8 shadow-sm">
-          <Palette size={20} className="text-[var(--accent)]" />
+        <div className="dashboard-tip border border-[var(--color-ink-black)] bg-[var(--color-bone-cream)] rounded-[11.52px] my-8 shadow-[var(--shadow-sm)]">
+          <Palette size={18} className="text-[var(--color-ink-black)]" />
           <div>
-            <strong>Your voice, in every creation.</strong>
-            <p>Set up your brand kit to keep all your AI-generated content on-brand.</p>
+            <strong>House Style & Editorial Guidelines</strong>
+            <p>Define your brand manual once to calibrate every generated piece of copy.</p>
           </div>
-          <Link to="/settings/brandkit" className="text-[var(--accent)] font-medium hover:underline inline-flex items-center gap-1">
-            Set up brand kit <ArrowRight size={16} />
+          <Link to="/settings/brandkit" className="text-[var(--color-ink-black)] font-normal underline hover:text-[var(--color-pure-black)] inline-flex items-center gap-1">
+            Open style manual <ArrowRight size={14} />
           </Link>
         </div>
       </main>
@@ -1000,11 +965,11 @@ function MediaPreview({ asset, projectId, onClose, onSaved }) {
       ) : !url ? (
         <Spinner />
       ) : asset.type === 'image' ? (
-        <img className="preview-image" src={url} alt={asset.name} />
+        <img className="preview-image rounded-none" src={url} alt={asset.name} />
       ) : asset.type === 'audio' ? (
-        <audio controls src={url} />
+        <audio controls src={url} className="w-full" />
       ) : asset.type === 'video' ? (
-        <video className="preview-video" controls src={url} />
+        <video className="preview-video rounded-none" controls src={url} />
       ) : (
         <iframe className="preview-pdf" title={asset.name} src={url} />
       )}
@@ -1101,7 +1066,7 @@ function Workspace() {
           onUploadProgress: (event) => setProgress(event.total ? Math.round((event.loaded / event.total) * 100) : 0),
         });
         setMedia((assets) => [data, ...assets]);
-        notify(`${file.name} uploaded.`);
+        notify(`${file.name} deposited.`);
       } catch (failure) {
         notify(errorText(failure), 'error');
       }
@@ -1127,7 +1092,7 @@ function Workspace() {
       setMessages((history) => [...history, data.userMessage, data.assistantMessage]);
       setInput('');
     } catch (failure) {
-      if (active()) notify(failure.name === 'AbortError' ? 'Generation stopped. Your prompt is kept; no partial response was saved.' : errorText(failure), failure.name === 'AbortError' ? 'info' : 'error');
+      if (active()) notify(failure.name === 'AbortError' ? 'Generation stopped. Your draft prompt was preserved.' : errorText(failure), failure.name === 'AbortError' ? 'info' : 'error');
     } finally {
       if (active()) {
         generation.current = null;
@@ -1147,7 +1112,7 @@ function Workspace() {
       setOutputAssetId(data.mediaId);
       setOutputDirty(false);
       setMedia((await api.get(`/projects/${id}/media`)).data);
-      notify('Remix created and saved to your assets.');
+      notify('Remixed copy generated and saved to library.');
     } catch (failure) {
       notify(errorText(failure), 'error');
     } finally {
@@ -1164,7 +1129,7 @@ function Workspace() {
       const { data } = await api.post(`/projects/${id}/messages/${message._id}/save`, {});
       if (currentProjectId.current !== request.projectId) return;
       setMedia((assets) => [data, ...assets.filter((asset) => asset._id !== data._id)]);
-      notify('Response saved to your source library. Open it to edit or export.');
+      notify('Dispatch saved to source library for editing.');
     } catch (failure) {
       if (currentProjectId.current === request.projectId) notify(errorText(failure), 'error');
     } finally {
@@ -1174,6 +1139,7 @@ function Workspace() {
       }
     }
   }
+
   function contentSaved(asset) {
     setMedia((assets) => assets.map((item) => (item._id === asset._id ? asset : item)));
     notify('Content changes saved to your project.');
@@ -1184,7 +1150,7 @@ function Workspace() {
       await navigator.clipboard.writeText(content);
       notify('Copied to clipboard.');
     } catch {
-      notify('Clipboard access is unavailable. Select and copy the text instead.', 'error');
+      notify('Clipboard access unavailable. Select and copy text directly.', 'error');
     }
   }
 
@@ -1202,24 +1168,26 @@ function Workspace() {
 
   return (
     <Shell workspace>
-      <div className="workspace-top border-b border-[var(--border)] bg-[var(--surface)]/95 px-6 py-3 flex items-center justify-between backdrop-blur-sm">
+      <div className="workspace-top border-b border-[var(--color-ink-black)] bg-[var(--color-parchment)] px-6 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="breadcrumbs flex items-center gap-2 text-sm text-[var(--muted)]">
-            <Link to="/dashboard" className="hover:text-[var(--text)] transition-colors">Projects</Link>
-            <ChevronRight size={14} className="text-[var(--muted)]" />
-            <strong className="text-[var(--text)] font-medium font-heading">{project.name}</strong>
+          <div className="breadcrumbs flex items-center gap-2 text-sm text-[var(--color-charcoal)] font-editorial-new">
+            <Link to="/dashboard" className="hover:text-[var(--color-ink-black)] underline underline-offset-2">Projects</Link>
+            <ChevronRight size={13} className="text-[var(--color-charcoal)]" />
+            <strong className="text-[var(--color-ink-black)] font-normal font-canopee text-lg">{project.name}</strong>
           </div>
           <button className="icon-button" aria-label="Edit project" onClick={() => setEditProject(true)}>
-            <Pencil size={15} />
+            <Pencil size={14} />
           </button>
         </div>
       </div>
 
       <main className="workspace">
-        <aside className="media-rail bg-[var(--surface)] border-r border-[var(--border)]">
-          <div className="rail-title mb-4">
-            <h2>Source library <span className="count">{media.length}</span></h2>
-            <span className="muted text-xs">Project files and references</span>
+        <aside className="media-rail bg-[var(--color-bone-cream)] border-r border-[var(--color-ink-black)]">
+          <div className="rail-title mb-3">
+            <h2 className="font-canopee font-normal text-xl text-[var(--color-ink-black)]">
+              Source desk <span className="count">{media.length}</span>
+            </h2>
+            <span className="muted text-xs font-editorial-new">Manuscripts, recordings & visual proofs</span>
           </div>
 
           <input
@@ -1233,7 +1201,7 @@ function Workspace() {
           />
 
           <button
-            className={`upload-zone ${dragging ? 'dragging' : ''} border border-dashed border-[var(--border-strong)] hover:border-[var(--accent)] transition-colors bg-[var(--elevated)]/50`}
+            className={`upload-zone ${dragging ? 'dragging' : ''} border border-dashed border-[var(--color-ink-black)] hover:bg-[var(--color-parchment)] transition-colors bg-[var(--color-parchment)] rounded-[2.88px]`}
             onDragOver={(event) => {
               event.preventDefault();
               setDragging(true);
@@ -1246,9 +1214,9 @@ function Workspace() {
             onClick={() => fileInput.current.click()}
             disabled={uploading}
           >
-            <Upload size={23} className="text-[var(--accent)]" />
-            <strong>{uploading ? `Uploading… ${progress}%` : 'Drop your files here'}</strong>
-            <span>{uploading ? 'Keeping your sources together' : 'or click to browse'}</span>
+            <Upload size={20} className="text-[var(--color-ink-black)]" />
+            <strong>{uploading ? `Depositing… ${progress}%` : 'Deposit files into project'}</strong>
+            <span className="text-xs">{uploading ? 'Archiving source material' : 'or click to browse'}</span>
             <small>Images, audio, video, PDF & text · 5 MB each</small>
             {uploading && <progress aria-label="Upload progress" value={progress} max="100" />}
           </button>
@@ -1257,13 +1225,13 @@ function Workspace() {
             {media.map((asset) => {
               const Icon = mediaIcons[asset.type] || FileText;
               return (
-                <div className="asset border border-[var(--border)] bg-[var(--elevated)] hover:border-[var(--accent)] rounded-lg transition-colors" key={asset._id}>
+                <div className="asset border border-[var(--color-ink-black)] bg-[var(--color-parchment)] rounded-[2.88px] transition-colors" key={asset._id}>
                   <button className="asset-open" onClick={() => setPreview(asset)}>
-                    <span className={`asset-icon ${asset.type} text-[var(--accent)]`}>
-                      <Icon size={20} />
+                    <span className="asset-icon text-[var(--color-ink-black)]">
+                      <Icon size={17} />
                     </span>
                     <span>
-                      <strong>{asset.name}</strong>
+                      <strong className="font-editorial-new font-normal">{asset.name}</strong>
                       <small>{asset.type.toUpperCase()} · {sizeLabel(asset.size)}</small>
                     </span>
                   </button>
@@ -1292,19 +1260,19 @@ function Workspace() {
 
           {!media.length && (
             <div className="rail-empty">
-              <FileText size={20} />
-              <p>Your source material lives here.<br />Upload a brief or a first idea.</p>
+              <FileText size={18} />
+              <p>Your source materials live here.<br />Deposit a brief, recording, or image.</p>
             </div>
           )}
 
-          <div className="context-note border border-[var(--border)] bg-[var(--elevated)] rounded-lg p-3">
-            <Sparkles size={15} className="text-[var(--accent)]" />
-            <span>Chat uses every asset in this project.<br />Remix focuses on the one you choose.</span>
+          <div className="context-note border border-[var(--color-ink-black)] bg-[var(--color-parchment)] rounded-[2.88px] p-2.5 mt-auto">
+            <Sparkles size={14} className="text-[var(--color-ember-orange)]" />
+            <span>Chat uses all files in context.<br />Remix focuses on your chosen asset.</span>
           </div>
         </aside>
 
-        <section className="creation-panel bg-[var(--bg)]">
-          <div className="workspace-tabs border-b border-[var(--border)]" role="tablist" aria-label="Creation tools">
+        <section className="creation-panel bg-[var(--color-parchment)]">
+          <div className="workspace-tabs border-b border-[var(--color-ink-black)]" role="tablist" aria-label="Creation tools">
             <button
               id="chat-tab"
               role="tab"
@@ -1318,7 +1286,7 @@ function Workspace() {
                 }
               }}
             >
-              <MessageSquare size={17} />AI chat
+              <MessageSquare size={16} />Editorial Chat
             </button>
             <button
               id="remix-tab"
@@ -1328,10 +1296,10 @@ function Workspace() {
               className={tab === 'remix' ? 'active' : ''}
               onClick={() => setTab('remix')}
             >
-              <WandSparkles size={17} />Content remix
+              <WandSparkles size={16} />Cross-Remix
             </button>
-            <span className="context-counter font-mono text-xs">
-              <FileText size={14} className="text-[var(--accent)]" />{media.length} assets in context
+            <span className="context-counter font-editorial-new text-xs">
+              <FileText size={13} className="text-[var(--color-ink-black)]" />{media.length} references in context
             </span>
           </div>
 
@@ -1340,17 +1308,17 @@ function Workspace() {
               <span className="warning-dot" />
               <span>
                 <strong>{health.aiConfiguration?.keyPresent && health.aiConfiguration?.modelPresent ? 'AI generation is paused.' : 'AI connection needed.'}</strong>{' '}
-                {health.aiConfiguration?.keyPresent && health.aiConfiguration?.modelPresent ? 'Key and model are configured. Verify provider access with npm run check:ai before enabling generation.' : 'Your projects and uploads work now. Configure GEMINI_API_KEY and GEMINI_MODEL, then explicitly enable AI generation.'}
+                {health.aiConfiguration?.keyPresent && health.aiConfiguration?.modelPresent ? 'Key and model configured. Run check:ai before enabling.' : 'Configure GEMINI_API_KEY and GEMINI_MODEL in server/.env.'}
               </span>
             </div>
           )}
 
-          {tab === 'chat' && <section className="workspace-skills" aria-label="Project skills">
-            <div className="workspace-skills-heading"><h3>Project skills & agents</h3><Link to={`/skills?project=${id}`}>Add skills</Link></div>
+          {tab === 'chat' && <section className="workspace-skills m-4 p-3.5 border border-[var(--color-ink-black)] rounded-[2.88px] bg-[var(--color-bone-cream)]" aria-label="Project skills">
+            <div className="workspace-skills-heading"><h3 className="font-canopee text-base font-normal">Active Editorial Skills</h3><Link to={`/skills?project=${id}`} className="text-xs text-[var(--color-ink-black)] underline">Configure skills</Link></div>
             {project.skillIds?.length ? <>
-              <label>Active skill<select aria-label="Active project skill" value={selectedSkillId} disabled={busy} onChange={event => setSelectedSkillId(event.target.value)}><option value="">General project chat</option>{project.skillIds.map(identifier => { const skill = skillById(identifier); return skill && <option key={identifier} value={identifier}>{skill.title} · {skill.agent.name}</option>; })}</select></label>
-              {selectedSkillId && <><p>{skillById(selectedSkillId)?.description} Source: {skillById(selectedSkillId)?.inputs}. This agent returns text, not rendered media.</p><button className="button secondary" disabled={busy || (skillById(selectedSkillId)?.sourceTypes.length > 0 && !media.some(asset => skillById(selectedSkillId).sourceTypes.includes(asset.type)))} onClick={() => send(null, skillById(selectedSkillId).prompt)}><Sparkles size={15} />Run {skillById(selectedSkillId)?.agent.name}</button></>}
-            </> : <p>Add specialist skills to this project, or keep using general chat and remix.</p>}
+              <label className="text-xs text-[var(--color-charcoal)]">Select skill register<select aria-label="Active project skill" value={selectedSkillId} disabled={busy} onChange={event => setSelectedSkillId(event.target.value)} className="mt-1 bg-[var(--color-parchment)] text-sm border border-[var(--color-ink-black)] rounded-[2.88px]"><option value="">General broadsheet chat</option>{project.skillIds.map(identifier => { const skill = skillById(identifier); return skill && <option key={identifier} value={identifier}>{skill.title} · {skill.agent.name}</option>; })}</select></label>
+              {selectedSkillId && <><p className="text-xs text-[var(--color-charcoal)] mt-1">{skillById(selectedSkillId)?.description}</p><button className="button secondary small mt-2" disabled={busy || (skillById(selectedSkillId)?.sourceTypes.length > 0 && !media.some(asset => skillById(selectedSkillId).sourceTypes.includes(asset.type)))} onClick={() => send(null, skillById(selectedSkillId).prompt)}><Sparkles size={13} />Run {skillById(selectedSkillId)?.agent.name}</button></>}
+            </> : <p className="text-xs text-[var(--color-charcoal)] mt-1">Assign specialized skills, or use free-form editorial chat and remix.</p>}
           </section>}
 
           <div id="creation-content" role="tabpanel" aria-labelledby={tab === 'chat' ? 'chat-tab' : 'remix-tab'} className="creation-content">
@@ -1359,26 +1327,26 @@ function Workspace() {
                 <div className="chat-scroll">
                   {!messages.length && !pending ? (
                     <div className="chat-welcome">
-                      <span className="sparkle-mark bg-[var(--soft)] border border-[var(--accent)]/30 text-[var(--accent)]">
-                        <Sparkles size={28} strokeWidth={1.5} />
+                      <span className="sparkle-mark bg-[var(--color-bone-cream)] border border-[var(--color-ink-black)] text-[var(--color-ember-orange)]">
+                        <Sparkles size={24} strokeWidth={1.5} />
                       </span>
-                      <h1>What are we creating today?</h1>
-                      <p>
+                      <h1 className="font-canopee font-normal text-3xl text-[var(--color-ink-black)] leading-[0.98]">What are we drafting today?</h1>
+                      <p className="font-editorial-new text-sm text-[var(--color-charcoal)] mt-1.5 leading-[1.35]">
                         {media.length
-                          ? 'Your source material is in context. Ask a question or turn it into something new.'
-                          : 'Upload your source material, then ask questions, find the story, or create your next piece of content.'}
+                          ? 'Your sources are loaded into context. Query the facts, draft a piece, or remix into target formats.'
+                          : 'Deposit your notes, recordings, or briefs to provide foundational context for generation.'}
                       </p>
                       <div className="prompt-grid">
                         {[
-                          ['Find the story', 'Summarize the key ideas across my uploaded assets.', FileText],
-                          ['Write a caption', 'Write three Instagram captions based on my project assets.', Image],
-                          ['Draft a blog post', 'Create a blog post from the source material in this project.', Pencil],
-                          ['Build a video script', 'Turn my source material into a 60-second video script.', Video],
+                          ['Extract the lead', 'Summarize the primary thesis and key points across my uploaded assets.', FileText],
+                          ['Draft social thread', 'Write a cohesive 5-part thread based on my project materials.', Image],
+                          ['Draft analysis column', 'Synthesize the notes into a structured 600-word analysis column.', Pencil],
+                          ['Write video script', 'Structure my source materials into a 90-second audiovisual script.', Video],
                         ].map(([label, prompt, Icon]) => (
-                          <button key={label} onClick={() => setInput(prompt)} className="border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)] hover:shadow-sm transition-all text-left">
-                            <Icon size={19} className="text-[var(--accent)]" />
-                            <span>{label}</span>
-                            <ArrowRight size={15} />
+                          <button key={label} onClick={() => setInput(prompt)} className="border border-[var(--color-ink-black)] bg-[var(--color-bone-cream)] hover:bg-[var(--color-parchment)] transition-colors text-left rounded-[2.88px] p-3">
+                            <Icon size={16} className="text-[var(--color-ember-orange)]" />
+                            <span className="font-editorial-new text-sm text-[var(--color-ink-black)]">{label}</span>
+                            <ArrowRight size={14} className="text-[var(--color-ink-black)] ml-auto" />
                           </button>
                         ))}
                       </div>
@@ -1387,12 +1355,12 @@ function Workspace() {
                     <div className="messages">
                       {messages.map((message) => (
                         <article className={`message ${message.role}`} key={message._id}>
-                          <span className={`message-avatar ${message.role === 'model' ? 'bg-[var(--soft)] text-[var(--accent)] border border-[var(--accent)]/30' : 'bg-[var(--elevated)] text-[var(--muted)] border border-[var(--border)]'}`}>
-                            {message.role === 'model' ? <Sparkles size={17} /> : 'You'}
+                          <span className={`message-avatar ${message.role === 'model' ? 'bg-[var(--color-ember-orange)] text-white border-transparent' : 'bg-[var(--color-ink-black)] text-[var(--color-parchment)]'}`}>
+                            {message.role === 'model' ? <Sparkles size={15} /> : 'You'}
                           </span>
                           <div>
                             <header>
-                              <strong>{message.role === 'model' ? 'CreatorForge' : 'You'}</strong>
+                              <strong className="font-canopee font-normal text-base">{message.role === 'model' ? 'CreatorForge Newsroom' : 'Editor'}</strong>
                               <span className="font-mono text-xs">
                                 {new Date(message.createdAt).toLocaleTimeString(undefined, {
                                   hour: '2-digit',
@@ -1412,18 +1380,18 @@ function Workspace() {
                           <article className="message user">
                             <span className="message-avatar">You</span>
                             <div>
-                              <header><strong>You</strong></header>
-                              <p>{pending}</p>
+                              <header><strong className="font-canopee font-normal">Editor</strong></header>
+                              <p className="font-editorial-new">{pending}</p>
                             </div>
                           </article>
                           {draftResponse && <article className="message model" aria-label="Response in progress">
-                            <span className="message-avatar"><Sparkles size={17} /></span>
-                            <div><header><strong>CreatorForge</strong><span>Draft · not saved yet</span></header>
+                            <span className="message-avatar"><Sparkles size={15} /></span>
+                            <div><header><strong className="font-canopee font-normal">CreatorForge</strong><span className="text-xs font-mono">Draft in progress…</span></header>
                               <div className="markdown"><Markdown remarkPlugins={[remarkGfm]}>{draftResponse}</Markdown></div>
                             </div>
                           </article>}
-                          <div className="generating text-[var(--accent)]" role="status">
-                            <LoaderCircle className="spin" size={17} />{draftResponse ? 'Writing your response…' : 'Connecting your sources…'}
+                          <div className="generating text-[var(--color-ink-black)] font-editorial-new" role="status">
+                            <LoaderCircle className="spin text-[var(--color-ember-orange)]" size={16} />{draftResponse ? 'Drafting dispatch…' : 'Synthesizing sources…'}
                           </div>
                         </>
                       )}
@@ -1432,29 +1400,29 @@ function Workspace() {
                   <div ref={chatEnd} />
                 </div>
 
-                <div className="composer-wrap">
-                  {/* Channel format selector pills */}
+                <div className="composer-wrap border-t border-[var(--color-ink-black)] bg-[var(--color-parchment)]">
+                  {/* Format selector pills */}
                   <div className="flex items-center gap-2 mb-2 overflow-x-auto pb-1 text-xs">
-                    <span className="text-[11px] font-mono text-[var(--muted)] mr-1 shrink-0">FORMATS:</span>
+                    <span className="font-editorial-new text-xs uppercase text-[var(--color-charcoal)] mr-1 shrink-0">TARGET FORMAT:</span>
                     {formats.slice(0, 5).map((f) => (
                       <button
                         key={f}
                         type="button"
                         onClick={() => setInput((prev) => prev ? `${prev}\n\nFormat as ${f}.` : `Write a ${f} based on this project.`)}
-                        className="px-2.5 py-1 rounded bg-[var(--surface)] hover:bg-[var(--soft)] hover:text-[var(--accent)] border border-[var(--border)] text-[var(--muted)] font-mono text-[11px] shrink-0 transition-colors"
+                        className="px-2.5 py-1 rounded-[2.88px] bg-[var(--color-bone-cream)] hover:bg-[var(--color-parchment)] border border-[var(--color-ink-black)] text-[var(--color-ink-black)] font-editorial-new text-xs shrink-0 transition-colors"
                       >
                         +{f}
                       </button>
                     ))}
                   </div>
 
-                  <form onSubmit={send} className="composer border border-[var(--border)] bg-[var(--surface)] rounded-xl focus-within:border-[var(--accent)] focus-within:ring-2 focus-within:ring-[var(--accent)]/15 shadow-sm">
+                  <form onSubmit={send} className="composer border border-[var(--color-ink-black)] bg-[var(--color-bone-cream)] rounded-[2.88px] shadow-[var(--shadow-sm)]">
                     <textarea
                       aria-label="Message CreatorForge"
                       rows={2}
                       value={input}
                       onChange={(event) => setInput(event.target.value)}
-                      placeholder="Ask about your sources, or tell me what to create…"
+                      placeholder="Ask questions about your sources, or instruct what to draft…"
                       maxLength={10000}
                       disabled={busy}
                       onKeyDown={(event) => {
@@ -1464,20 +1432,20 @@ function Workspace() {
                         }
                       }}
                     />
-                    <div className="composer-footer border-t border-[var(--border)]">
-                      <span className="text-[var(--muted)] font-mono text-xs"><Sparkles size={13} className="text-[var(--accent)]" />Project context + calibrated voice</span>
-                      {pending ? <button key="stop-generation" type="button" className="send-button" aria-label="Stop generation" title="Stop generation" onClick={(event) => { event.preventDefault(); generation.current?.abort(); }}><span aria-hidden="true">■</span></button> : <button key="send-message" type="submit" className="send-button bg-[var(--accent)] hover:bg-[var(--accent-light)] text-white shadow-md" aria-label="Send message" disabled={busy || !input.trim()}>
-                        {busy ? <LoaderCircle className="spin" size={18} /> : <ArrowUp size={19} />}
+                    <div className="composer-footer border-t border-[var(--color-ink-black)]/20 pt-2">
+                      <span className="text-[var(--color-charcoal)] font-editorial-new text-xs"><Sparkles size={12} className="text-[var(--color-ember-orange)]" />Context-aware + calibrated to your brand manual</span>
+                      {pending ? <button key="stop-generation" type="button" className="send-button" aria-label="Stop generation" title="Stop generation" onClick={(event) => { event.preventDefault(); generation.current?.abort(); }}><span aria-hidden="true">■</span></button> : <button key="send-message" type="submit" className="send-button bg-[var(--color-ink-black)] text-[var(--color-parchment)] hover:bg-[var(--color-pure-black)]" aria-label="Send message" disabled={busy || !input.trim()}>
+                        {busy ? <LoaderCircle className="spin" size={16} /> : <ArrowUp size={16} />}
                       </button>}
                     </div>
                   </form>
-                  <p className="composer-note">Creates text and code, not rendered images or videos. Review before publishing.</p>
+                  <p className="composer-note text-xs text-[var(--color-charcoal)] font-editorial-new">Produces editorial copy and outlines. Verify factual accuracy before publishing.</p>
                 </div>
               </>
             ) : (
               <div className="remix-panel">
-                <h1 className="text-2xl font-bold text-[var(--text)] mb-1 font-heading">Give your content a second life.</h1>
-                <p className="muted">Choose a source, pick a format, and let your brand lead the way.</p>
+                <h1 className="text-2xl font-canopee font-normal text-[var(--color-ink-black)] mb-1 leading-[0.98]">Multi-format cross-remix.</h1>
+                <p className="muted font-editorial-new text-sm">Select an asset, choose an output format, and reframe into new channels.</p>
 
                 <form onSubmit={remix} className="remix-form">
                   <div className="two-columns">
@@ -1489,7 +1457,7 @@ function Workspace() {
                         ))}
                       </select>
                     </Field>
-                    <Field label="Create a">
+                    <Field label="Target format">
                       <select value={format} onChange={(event) => setFormat(event.target.value)}>
                         {formats.map((item) => (
                           <option key={item}>{item}</option>
@@ -1498,28 +1466,28 @@ function Workspace() {
                     </Field>
                   </div>
 
-                  <Field label="Creative direction (optional)">
+                  <Field label="Editorial instructions (optional)">
                     <textarea
                       rows={3}
                       value={instructions}
                       onChange={(event) => setInstructions(event.target.value)}
                       maxLength={3000}
-                      placeholder="A specific angle, length, or call to action…"
+                      placeholder="Specify tone, angle, audience takeaway, or word count…"
                     />
                   </Field>
 
                   <button disabled={busy || !source} className="button primary">
-                    {busy ? <LoaderCircle className="spin" size={17} /> : <WandSparkles size={17} />}
-                    {busy ? 'Creating your remix…' : 'Generate remix'}
+                    {busy ? <LoaderCircle className="spin" size={15} /> : <WandSparkles size={15} />}
+                    {busy ? 'Generating remix…' : 'Generate remix'}
                   </button>
                 </form>
 
-                {!media.length && <p className="muted">Upload at least one asset to get started.</p>}
+                {!media.length && <p className="muted font-editorial-new text-sm">Deposit at least one source file to unlock cross-remixing.</p>}
 
                 {outputAssetId && (
                   <section className="remix-output">
                     <header>
-                      <h2>Your remixed content</h2>
+                      <h2 className="font-canopee font-normal text-xl">Remixed content draft</h2>
                     </header>
                     <SavedContent
                       key={outputAssetId}
@@ -1591,7 +1559,7 @@ function BrandSettings() {
         colors: form.colors.split(',').map((item) => item.trim()).filter(Boolean),
       });
       setBrand(data);
-      notify('Brand kit saved. Your voice is ready for every generation.');
+      notify('Brand manual saved. Guardrails will guide every generation.');
     } catch (failure) {
       setError(errorText(failure));
     } finally {
@@ -1602,16 +1570,20 @@ function BrandSettings() {
   return (
     <Shell>
       <main className="brand-page max-w-6xl mx-auto py-8 px-4 sm:px-6">
-        <Link className="back-link inline-flex items-center gap-2 text-sm text-[var(--muted)] hover:text-[var(--text)] transition-colors mb-6" to="/dashboard">
-          <ArrowLeft size={16} />Back to projects
+        <Link className="back-link inline-flex items-center gap-2 text-sm text-[var(--color-charcoal)] hover:text-[var(--color-ink-black)] transition-colors mb-5 font-editorial-new" to="/dashboard">
+          <ArrowLeft size={15} />Back to projects
         </Link>
-        <div className="page-title flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="page-title flex flex-col md:flex-row md:items-center justify-between gap-4 mb-7">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[var(--text)] mb-2 font-heading">Your brand. Your voice.</h1>
-            <p className="text-[var(--muted)] text-sm">Give every creation a familiar direction, without repeating yourself.</p>
+            <h1 className="text-3xl md:text-4xl font-canopee font-normal tracking-[-0.035em] text-[var(--color-ink-black)] mb-1 leading-[0.98]">
+              House Style & Brand Manual
+            </h1>
+            <p className="text-[var(--color-charcoal)] font-editorial-new text-sm">
+              Define your publication voice, audience profile, and copy guidelines once.
+            </p>
           </div>
-          <span className="brand-emblem flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--soft)] border border-[var(--accent)]/30 text-[var(--accent)] shrink-0">
-            <Palette size={28} />
+          <span className="brand-emblem flex items-center justify-center w-14 h-14 rounded-[2.88px] bg-[var(--color-bone-cream)] border border-[var(--color-ink-black)] text-[var(--color-ember-orange)] shrink-0">
+            <Palette size={24} />
           </span>
         </div>
 
@@ -1619,88 +1591,95 @@ function BrandSettings() {
           <Spinner />
         ) : (
           <div className="brand-layout grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
-            <form onSubmit={save} className="brand-form bg-[var(--surface)] border border-[var(--border)] p-6 md:p-8 rounded-2xl shadow-sm">
-              <div className="mb-6 pb-3 border-b border-[var(--border)]">
-                <h2 className="text-lg font-semibold text-[var(--text)] font-heading">The essentials</h2>
+            <form onSubmit={save} className="brand-form bg-[var(--color-bone-cream)] border border-[var(--color-ink-black)] p-6 md:p-8 rounded-[11.52px] shadow-[var(--shadow-sm)]">
+              <div className="mb-5 pb-2.5 border-b border-[var(--color-ink-black)]">
+                <h2 className="text-lg font-canopee font-normal text-[var(--color-ink-black)]">The Essentials</h2>
               </div>
 
-              <Field label="Brand name">
+              <Field label="Publication / Brand name">
                 <input
                   name="name"
                   defaultValue={brand.name}
                   maxLength={100}
-                  placeholder="Your brand or studio name"
+                  placeholder="Your publication or studio name"
                 />
               </Field>
 
               <div className="two-columns">
-                <Field label="Tone of voice">
+                <Field label="Voice & Register">
                   <input
                     name="tone"
                     defaultValue={brand.tone}
                     maxLength={200}
-                    placeholder="Warm, bold, conversational…"
+                    placeholder="Authoritative, journalistic, conversational…"
                   />
                 </Field>
-                <Field label="Audience">
+                <Field label="Target Readership">
                   <input
                     name="audience"
                     defaultValue={brand.audience}
                     maxLength={500}
-                    placeholder="Who are you speaking to?"
+                    placeholder="Who are you writing for?"
                   />
                 </Field>
               </div>
 
-              <Field label="Keywords" hint="Separate words or short phrases with commas.">
+              <Field label="Style Keywords" hint="Keywords separated by commas.">
                 <input
                   name="keywords"
                   defaultValue={brand.keywords.join(', ')}
-                  placeholder="Thoughtful, independent, sustainable"
+                  placeholder="Precise, incisive, observational"
                 />
               </Field>
               <div>
-                <Field label="Brand colors" hint="Hex codes separated by commas, e.g. #FF5E1E, #FF9900, #10B981.">
+                <Field label="Palette (Hex codes)" hint="Hex codes separated by commas, e.g. #1D1D1B, #C03F13, #E2DEDB.">
                   <input
                     name="colors"
                     value={colorInput}
                     onChange={(event) => setColorInput(event.target.value)}
-                    placeholder="#FF5E1E, #FF9900, #10B981"
+                    placeholder="#1D1D1B, #C03F13, #E2DEDB"
                   />
                 </Field>
                 <BrandColorPreview colors={colorInput} />
               </div>
-              <div className="flex items-center justify-between mt-8 mb-6 pb-3 border-b border-[var(--border)]">
-                <h2 className="guidelines-heading text-lg font-semibold text-[var(--text)] font-heading">The creative guardrails</h2>
+
+              <div className="flex items-center justify-between mt-7 mb-5 pb-2.5 border-b border-[var(--color-ink-black)]">
+                <h2 className="guidelines-heading text-lg font-canopee font-normal text-[var(--color-ink-black)]">Editorial Guardrails</h2>
               </div>
 
-              <Field label="Brand guidelines">
+              <Field label="Editorial Guidelines & Style Rules">
                 <textarea
                   name="guidelines"
-                  rows={7}
+                  rows={6}
                   defaultValue={brand.guidelines}
                   maxLength={10000}
-                  placeholder="What should your content always do? What should it avoid? Add preferred phrases, writing rules, and anything that makes your brand feel like you."
+                  placeholder="What rules should drafts follow? Prohibited clichés, required citations, headline conventions, and tone directives."
                 />
               </Field>
 
               {error && <p className="inline-error" role="alert">{error}</p>}
 
               <button disabled={busy} className="button primary mt-4">
-                {busy ? <LoaderCircle className="spin" size={17} /> : <Check size={17} />}Save brand kit
+                {busy ? <LoaderCircle className="spin" size={15} /> : <Check size={15} />}Save brand manual
               </button>
             </form>
 
-            <aside className="brand-explainer bg-[var(--surface)] border border-[var(--border)] p-6 rounded-2xl self-start shadow-sm">
-              <Sparkles size={22} className="text-[var(--accent)] mb-3" />
-              <h2 className="text-xl font-bold text-[var(--text)] mb-2 leading-tight font-heading">One voice.<br />Every project.</h2>
-              <p className="text-xs text-[var(--muted)] mb-6 leading-relaxed">Your saved brand kit is included in every AI chat and remix request across your account.</p>
-              <div className="space-y-3">
-                <div className="brand-rule text-xs text-[var(--text)] flex items-center gap-2"><Check size={15} className="text-emerald-500 shrink-0" />Your tone, not a generic voice</div>
-                <div className="brand-rule text-xs text-[var(--text)] flex items-center gap-2"><Check size={15} className="text-emerald-500 shrink-0" />Audience-aware content</div>
-                <div className="brand-rule text-xs text-[var(--text)] flex items-center gap-2"><Check size={15} className="text-emerald-500 shrink-0" />Guidelines applied automatically</div>
+            <aside className="brand-explainer bg-[var(--color-bone-cream)] border border-[var(--color-ink-black)] p-6 rounded-[11.52px] self-start shadow-[var(--shadow-sm)]">
+              <Sparkles size={20} className="text-[var(--color-ember-orange)] mb-3" />
+              <h2 className="text-xl font-canopee font-normal text-[var(--color-ink-black)] mb-2 leading-[0.98]">
+                One standard.<br />Every dispatch.
+              </h2>
+              <p className="text-xs text-[var(--color-charcoal)] mb-5 leading-[1.35] font-editorial-new">
+                Your saved manual is injected as system guidance into every AI prompt across this studio.
+              </p>
+              <div className="space-y-2.5 font-editorial-new text-xs">
+                <div className="brand-rule flex items-center gap-2"><Check size={14} className="text-[var(--color-ember-orange)] shrink-0" />Custom tone of voice</div>
+                <div className="brand-rule flex items-center gap-2"><Check size={14} className="text-[var(--color-ember-orange)] shrink-0" />Audience-calibrated vocabulary</div>
+                <div className="brand-rule flex items-center gap-2"><Check size={14} className="text-[var(--color-ember-orange)] shrink-0" />Editorial rules enforced natively</div>
               </div>
-              <p className="brand-footnote text-[11px] text-[var(--muted)] pt-4 border-t border-[var(--border)] mt-6 leading-relaxed">Colors guide the creative brief. CreatorForge generates text, not images or videos.</p>
+              <p className="brand-footnote text-xs text-[var(--color-charcoal)] pt-3.5 border-t border-[var(--color-ink-black)] mt-5 leading-[1.35] font-editorial-new">
+                CreatorForge generates publication-grade text, dispatches, and scripts.
+              </p>
             </aside>
           </div>
         )}

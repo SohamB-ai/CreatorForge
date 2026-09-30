@@ -2,7 +2,7 @@
   min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 11.52px;
   padding: 20px;
   box-shadow: var(--card-shadow);
 }
@@ -25,13 +25,13 @@
 
 .saved-content-toolbar > span {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: var(--muted);
+  font-size: 13px;
+  color: var(--color-ink-black);
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px;
-  border-radius: 9999px;
+  padding: 3px 8px;
+  border-radius: 2.88px;
   background: var(--elevated);
   border: 1px solid var(--border);
 }
@@ -40,18 +40,19 @@
   width: 100%;
   box-sizing: border-box;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 15px;
+  line-height: 1.5;
   background: var(--input);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px;
+  border-radius: 2.88px;
+  padding: 12px;
 }
 
 .saved-content textarea:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--soft);
+  border-color: var(--color-pure-black);
+  outline: 1px solid var(--color-pure-black);
+  box-shadow: none;
 }
 
 .saved-content .markdown,
@@ -59,12 +60,12 @@
   overflow-wrap: anywhere;
   max-height: 55vh;
   overflow: auto;
-  font-size: 13.5px;
-  line-height: 1.7;
-  padding: 16px;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 14px;
   background: var(--elevated);
   color: var(--text);
-  border-radius: 8px;
+  border-radius: 2.88px;
   border: 1px solid var(--border);
 }
 
@@ -94,19 +95,22 @@
 }
 
 .saved-content .muted {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
 }
 
 .saved-content .button {
   min-height: 40px;
+  font-size: 14px;
+  border-radius: 2.88px;
 }
 
 .saved-content-export select {
   width: 100%;
   background: var(--input);
   color: var(--text);
-  border-color: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 2.88px;
 }
 
 @media (max-width: 700px) {

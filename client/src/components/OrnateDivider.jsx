@@ -16,34 +16,31 @@ export function OrnateDivider({ glyph = '✶', className = '' }) {
     const ctx = gsap.context(() => {
       gsap.fromTo(
         lineRef.current,
-        { scaleX: 0, opacity: 0.2 },
+        { scaleX: 0, opacity: 0.3 },
         {
           scaleX: 1,
           opacity: 1,
-          duration: 1.2,
-          ease: 'power3.out',
+          duration: 0.8,
+          ease: 'power2.out',
           scrollTrigger: {
             trigger: containerRef.current,
-            start: 'top 90%',
-            toggleActions: 'play none none none',
+            start: 'top 92%',
           },
         }
       );
 
       gsap.fromTo(
         glyphRef.current,
-        { scale: 0.2, rotation: -75, opacity: 0 },
+        { scale: 0.5, opacity: 0 },
         {
           scale: 1,
-          rotation: 0,
           opacity: 1,
-          duration: 0.9,
-          delay: 0.2,
-          ease: 'back.out(2)',
+          duration: 0.6,
+          delay: 0.15,
+          ease: 'power2.out',
           scrollTrigger: {
             trigger: containerRef.current,
-            start: 'top 90%',
-            toggleActions: 'play none none none',
+            start: 'top 92%',
           },
         }
       );
@@ -55,21 +52,20 @@ export function OrnateDivider({ glyph = '✶', className = '' }) {
   return (
     <div
       ref={containerRef}
-      className={`ornate-divider-container relative my-12 flex items-center justify-center max-w-4xl mx-auto px-6 ${className}`}
+      className={`ornate-divider-container relative my-10 flex items-center justify-center max-w-5xl mx-auto px-6 ${className}`}
       role="separator"
       aria-hidden="true"
     >
       <div
         ref={lineRef}
-        className="ornate-divider-line w-full h-[1px] bg-gradient-to-r from-transparent via-[#4A3F35] via-[#C9A962] via-[#4A3F35] to-transparent origin-center will-change-transform"
+        className="ornate-divider-line w-full h-[1px] bg-[var(--color-ink-black)] origin-center will-change-transform"
       />
       <span
         ref={glyphRef}
-        className="ornate-divider-glyph absolute bg-[var(--bg)] px-4 text-[#C9A962] text-sm select-none font-display drop-shadow-[0_0_8px_rgba(201,169,98,0.3)] will-change-transform"
+        className="ornate-divider-glyph absolute bg-[var(--bg)] px-3 text-[var(--color-ember-orange)] text-sm select-none font-editorial-new font-normal will-change-transform"
       >
         {glyph}
       </span>
     </div>
   );
 }
-

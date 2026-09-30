@@ -1,18 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Sparkles,
   AudioLines,
   FileText,
   Image,
   Video,
-  ArrowRight,
   Feather,
-  Scroll,
   WandSparkles,
   Play,
   Pause,
   Volume2,
   Check,
+  FileSpreadsheet,
+  ShieldCheck,
+  BookmarkCheck,
+  Lock,
 } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -22,24 +23,24 @@ gsap.registerPlugin(ScrollTrigger);
 
 const FORMAT_PREVIEWS = {
   'X thread': {
-    badge: 'Dispatch Series · 6 Posts',
-    text: '1/6 The paradox of modern creation is that ephemeral velocity destroys lasting resonance. When every draft is anchored in primary sources, your scholarship becomes timeless. 🧵',
+    badge: 'Editorial Dispatch (6 Posts)',
+    text: '1/6 Modern publishing rewards velocity over resonance. But when every draft is anchored in primary field notes and transcripts, your reporting holds enduring weight.',
   },
   'LinkedIn post': {
-    badge: 'Monographic Article · Professional Register',
-    text: 'Most content creators mistake publishing frequency for intellectual authority. In our archival research across enduring studios, one principle stood unshakeable: context is the catalyst for conviction.',
+    badge: 'Analysis Column (Broadsheet Register)',
+    text: 'Most creators mistake volume for authority. Across leading independent publications, one principle stands out: context is the catalyst for conviction.',
   },
   'Video script': {
-    badge: 'Audiovisual Script · 03:30 Runtime',
-    text: '[SCENE: Warm incandescent lamplight over an archival desk with ink and manuscript folios]\nNARRATOR (Reflective): Before algorithms, every recorded sentence bore the permanence of a chisel on stone…',
+    badge: 'Video Essay Script (03:30 Runtime)',
+    text: '[SCENE: Daylight on an editorial drafting desk with proofs, audio recorder, and source clippings]\nHOST (Direct to camera): Before algorithmic feeds, every headline was weighed for permanence on paper…',
   },
   'Monograph': {
-    badge: 'Scholarly Folio · Chapter Excerpt',
-    text: '“Chapter IV: The Preservation of Canon. As substantiated in Folio 02, the fragmentation of research across isolated digital tools creates cognitive leakage, compromising structural integrity.”',
+    badge: 'Long-form Feature (Chapter Proof)',
+    text: 'Section IV: The Living Archive. When research fragments across siloed apps, editorial continuity leaks away. The studio must operate from a single source of truth.',
   },
   'Executive Summary': {
-    badge: 'Synthesis Brief · High-Density Summary',
-    text: 'CORE DIRECTIVE: Complete synthesis of 4 archival plates and 2 voice dictations completed. Voice adherence verified at 99.2%. Actionable takeaways distilled into 3 strategic pillars.',
+    badge: 'Briefing Note (Condensed Summary)',
+    text: 'CORE DIRECTIVE: Synthesis of 4 editorial plates and 2 recorded memos complete. Tone consistency verified. Key insights structured into 3 actionable columns.',
   },
 };
 
@@ -47,8 +48,6 @@ export function BentoGrid() {
   const sectionRef = useRef(null);
   const headerRef = useRef(null);
   const cardsRef = useRef([]);
-  const parallaxImgRef = useRef(null);
-  const imgContainerRef = useRef(null);
 
   const [selectedFormat, setSelectedFormat] = useState('X thread');
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -59,7 +58,6 @@ export function BentoGrid() {
 
   const formats = ['X thread', 'LinkedIn post', 'Video script', 'Monograph', 'Executive Summary'];
 
-  // Audio simulation timer and animated wave bars
   useEffect(() => {
     let interval;
     if (isPlayingAudio) {
@@ -73,21 +71,19 @@ export function BentoGrid() {
     return () => clearInterval(interval);
   }, [isPlayingAudio]);
 
-  // GSAP ScrollTrigger Animations
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const ctx = gsap.context(() => {
-      // Header entrance
       gsap.fromTo(
         headerRef.current,
-        { opacity: 0, y: 30 },
+        { opacity: 0, y: 24 },
         {
           opacity: 1,
           y: 0,
-          duration: 0.9,
-          ease: 'power3.out',
+          duration: 0.7,
+          ease: 'power2.out',
           scrollTrigger: {
             trigger: headerRef.current,
             start: 'top 85%',
@@ -95,41 +91,22 @@ export function BentoGrid() {
         }
       );
 
-      // Staggered cards entrance
       const validCards = cardsRef.current.filter(Boolean);
       gsap.fromTo(
         validCards,
-        { opacity: 0, y: 48 },
+        { opacity: 0, y: 32 },
         {
           opacity: 1,
           y: 0,
-          duration: 0.85,
-          stagger: 0.12,
-          ease: 'power3.out',
+          duration: 0.65,
+          stagger: 0.08,
+          ease: 'power2.out',
           scrollTrigger: {
             trigger: sectionRef.current,
             start: 'top 75%',
           },
         }
       );
-
-      // Parallax scroll on archival plate image inside Discipline I
-      if (parallaxImgRef.current && imgContainerRef.current) {
-        gsap.fromTo(
-          parallaxImgRef.current,
-          { yPercent: -12 },
-          {
-            yPercent: 12,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: imgContainerRef.current,
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: true,
-            },
-          }
-        );
-      }
     }, sectionRef);
 
     return () => ctx.revert();
@@ -144,58 +121,48 @@ export function BentoGrid() {
   return (
     <section
       ref={sectionRef}
-      className="bento-section py-24 border-t border-[var(--border)] relative transition-colors"
-      aria-label="CreatorForge core capabilities"
+      className="bento-section py-20 px-6 max-w-6xl mx-auto relative transition-colors"
+      aria-label="CreatorForge core capabilities and feature suite"
     >
-      <div ref={headerRef} className="max-w-6xl mx-auto px-6 mb-14 text-center will-change-transform">
-        <span className="font-display text-[11px] font-semibold tracking-[0.3em] uppercase text-[var(--accent)] block mb-3">
-          Volume III · Core Disciplines
-        </span>
-        <h2 className="text-3xl md:text-5xl font-heading font-medium tracking-tight text-[var(--text)] mb-4">
-          The Scholar’s Toolkit: From Raw Source to Masterpiece
+      <div ref={headerRef} className="mb-14 text-center max-w-3xl mx-auto will-change-transform">
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-heading font-medium tracking-tight text-[var(--text)] mb-3 leading-tight">
+          A better way: Raw material to finished canon.
         </h2>
-        <p className="text-[var(--muted)] font-body text-lg max-w-2xl mx-auto leading-relaxed">
-          Rather than scattering thoughts across disconnected modern tools, CreatorForge gathers every note, recording, and reference into a unified, scholarly scriptorium.
+        <p className="text-[var(--muted)] font-body text-lg leading-relaxed">
+          Six integrated pillars engineered for writers, researchers, and studio directors who refuse to compromise on authenticity.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-7 max-w-6xl mx-auto px-6">
-        {/* Cell 1: The Source Archive */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        {/* Feature 1: The Source Library (7 cols) */}
         <div ref={(el) => (cardsRef.current[0] = el)} className="md:col-span-7 will-change-transform">
-          <SpotlightCard className="corner-flourish relative min-h-[380px] h-full flex flex-col justify-between p-8 bg-[var(--surface)] text-[var(--text)] overflow-hidden border border-[var(--border)] rounded-[4px] hover:border-[var(--accent)]/50 transition-colors shadow-lg">
-            <div ref={imgContainerRef} className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-              <img
-                ref={parallaxImgRef}
-                src="/assets/creative_studio_art.jpg"
-                alt="Archival creative references"
-                className="w-full h-[125%] -top-[12%] absolute object-cover object-center opacity-25 dark:opacity-30 dark:mix-blend-luminosity sepia-reveal will-change-transform"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface)] via-[var(--surface)]/85 to-transparent" />
-            </div>
-
-            <div className="relative z-10 flex items-center justify-between">
-              <span className="inline-flex items-center gap-2 rounded-[3px] border border-[var(--accent)]/30 bg-[var(--elevated)]/90 px-3 py-1 font-display text-[10.5px] uppercase tracking-[0.18em] text-[var(--accent)] backdrop-blur-md shadow-sm">
-                <Scroll size={13} className="text-[var(--accent)]" /> Discipline I · Archival Library
+          <SpotlightCard className="relative min-h-[380px] h-full flex flex-col justify-between p-7 md:p-8 bg-[var(--surface)] text-[var(--text)] overflow-hidden border border-[var(--border)] rounded-[4px]">
+            <div className="flex items-center justify-between relative z-10 mb-4">
+              <span className="inline-flex items-center gap-2 rounded-[2.88px] border border-[var(--border)] bg-[var(--elevated)] px-3 py-1 font-editorial-new text-xs uppercase tracking-wider text-[var(--text)]">
+                <FileSpreadsheet size={13} className="text-[var(--accent)]" /> Feature 01 · Primary Source Vault
               </span>
+              <span className="text-xs font-mono font-medium text-[var(--accent)]">CONTEXT PRESERVED</span>
             </div>
 
-            <div className="relative z-10 mt-auto pt-14">
-              <h3 className="text-2xl font-heading font-medium text-[var(--text)] tracking-normal mb-2.5">
-                Every source preserved in context.
-              </h3>
-              <p className="text-[var(--muted)] font-body text-base leading-relaxed max-w-lg mb-6">
-                Deposit research manuscripts, voice dictations, photographic plates, and historical references directly into your project's repository.
-              </p>
-              <div className="flex flex-wrap gap-2.5">
+            <div className="relative z-10 my-4">
+              <div className="arch-top overflow-hidden border border-[var(--border)] bg-[var(--elevated)] mb-4 relative max-h-48">
+                <img
+                  src="/assets/creative_studio_art.jpg"
+                  alt="Archival study and creative references"
+                  className="w-full h-44 object-cover object-center filter brightness-95"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface)]/90 via-transparent to-transparent opacity-80" />
+              </div>
+              <div className="flex flex-wrap gap-2">
                 {[
-                  { label: 'Plate Imagery', icon: Image },
-                  { label: 'Vocal Dictations', icon: AudioLines },
-                  { label: 'Moving Film', icon: Video },
-                  { label: 'Manuscripts & Notes', icon: FileText },
+                  { label: 'Photographic Proofs', icon: Image },
+                  { label: 'Audio Interviews', icon: AudioLines },
+                  { label: 'Video Footage', icon: Video },
+                  { label: 'Briefs & Manuscripts', icon: FileText },
                 ].map(({ label, icon: Icon }) => (
                   <span
                     key={label}
-                    className="inline-flex items-center gap-1.5 rounded-[3px] border border-[var(--border)] bg-[var(--elevated)] px-2.5 py-1 text-xs text-[var(--text)] font-body backdrop-blur-sm shadow-sm hover:border-[var(--accent)]/50 transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-[2.88px] border border-[var(--border)] bg-[var(--elevated)] px-2.5 py-1 text-xs text-[var(--text)] font-body"
                   >
                     <Icon size={13} className="text-[var(--accent)]" />
                     {label}
@@ -203,138 +170,140 @@ export function BentoGrid() {
                 ))}
               </div>
             </div>
+
+            <div className="relative z-10 pt-2 border-t border-[var(--border)]/30">
+              <h3 className="text-xl sm:text-2xl font-heading font-medium text-[var(--text)] mb-1">
+                Every reference preserved in context.
+              </h3>
+              <p className="text-[var(--muted)] font-body text-sm leading-relaxed">
+                <strong className="text-[var(--text)] font-medium">Concrete Benefit:</strong> Deposit audio, proofs, briefs, and notes into one consecrated study so your drafts cite factual evidence instead of hallucinated filler.
+              </p>
+            </div>
           </SpotlightCard>
         </div>
 
-        {/* Cell 2: Audio to text */}
+        {/* Feature 2: Audio to text (5 cols) */}
         <div ref={(el) => (cardsRef.current[1] = el)} className="md:col-span-5 will-change-transform">
-          <SpotlightCard className="corner-flourish relative min-h-[380px] h-full flex flex-col justify-between p-8 bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] overflow-hidden rounded-[4px] hover:border-[var(--accent)]/50 transition-colors shadow-lg">
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-2 rounded-[3px] border border-[var(--accent)]/30 bg-[var(--elevated)]/90 px-3 py-1 font-display text-[10.5px] uppercase tracking-[0.18em] text-[var(--accent)]">
-                <AudioLines size={13} className="text-[var(--accent)]" /> Discipline II · Vocal Records
+          <SpotlightCard className="relative min-h-[380px] h-full flex flex-col justify-between p-7 md:p-8 bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] rounded-[4px]">
+            <div className="flex items-center justify-between mb-3">
+              <span className="inline-flex items-center gap-2 rounded-[2.88px] border border-[var(--border)] bg-[var(--elevated)] px-3 py-1 font-editorial-new text-xs uppercase tracking-wider text-[var(--text)]">
+                <AudioLines size={13} className="text-[var(--accent)]" /> Feature 02 · Spoken Dictation
               </span>
               <button
                 type="button"
                 onClick={() => setIsPlayingAudio(!isPlayingAudio)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] text-[10.5px] font-display uppercase tracking-wider bg-[var(--elevated)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--accent)] transition-all cursor-pointer shadow-sm active:scale-95"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[2.88px] text-xs font-body uppercase tracking-wider bg-[var(--text)] text-[var(--bg)] border border-[var(--border)] hover:bg-[var(--accent)] transition-all cursor-pointer shadow-sm"
                 title={isPlayingAudio ? 'Pause playback' : 'Listen to dictation sample'}
               >
                 {isPlayingAudio ? (
                   <>
-                    <Pause size={12} className="text-[var(--accent)] animate-pulse" />
+                    <Pause size={12} />
                     <span>Pause</span>
                   </>
                 ) : (
                   <>
-                    <Play size={12} className="text-[var(--accent)]" />
-                    <span>Audition</span>
+                    <Play size={12} />
+                    <span>Listen</span>
                   </>
                 )}
               </button>
             </div>
 
-            <div className="my-6 p-4 rounded-[4px] bg-[var(--elevated)] border border-[var(--border)] flex flex-col justify-center shadow-inner relative group">
-              <div className="flex items-center justify-between text-xs text-[var(--muted)] mb-3 font-display">
-                <span className="tracking-wide flex items-center gap-1.5">
-                  <Volume2 size={12} className={isPlayingAudio ? 'text-[var(--accent)]' : 'text-[var(--muted)]'} />
-                  folio-lecture-notes.m4a
+            <div className="my-4 p-4 rounded-[3px] bg-[var(--elevated)] border border-[var(--border)] flex flex-col justify-center relative">
+              <div className="flex items-center justify-between text-xs text-[var(--muted)] mb-2 font-body">
+                <span className="flex items-center gap-1.5">
+                  <Volume2 size={13} className={isPlayingAudio ? 'text-[var(--accent)]' : 'text-[var(--muted)]'} />
+                  field-interview-notes.m4a
                 </span>
-                <span className="font-mono text-[var(--accent)]">{formatTimer(audioSeconds)} / 04:18</span>
+                <span className="font-mono text-xs text-[var(--text)]">{formatTimer(audioSeconds)} / 04:18</span>
               </div>
               <div
-                className="h-10 flex items-center justify-center gap-1 cursor-pointer py-1"
+                className="h-8 flex items-center justify-center gap-1 cursor-pointer py-1"
                 onClick={() => setIsPlayingAudio(!isPlayingAudio)}
                 title="Click to toggle dictation playback"
               >
                 {waveHeights.map((h, i) => (
                   <span
                     key={i}
-                    style={{ height: `${Math.max(14, h)}%` }}
-                    className={`w-1.5 rounded-[1px] transition-all duration-150 ${
+                    style={{ height: `${Math.max(15, h)}%` }}
+                    className={`w-1 rounded-none transition-all duration-150 ${
                       isPlayingAudio
-                        ? 'bg-gradient-to-t from-[var(--accent)] to-[#FFE680] shadow-[0_0_6px_rgba(201,169,98,0.5)]'
-                        : 'bg-[var(--accent)] opacity-70 group-hover:opacity-100'
+                        ? 'bg-[var(--accent)]'
+                        : 'bg-[var(--text)] opacity-60'
                     }`}
                   />
                 ))}
               </div>
               {isPlayingAudio && (
-                <div className="mt-3 pt-2.5 border-t border-[var(--border)]/60 text-xs font-body italic text-[var(--text)] leading-relaxed animate-fadeIn">
-                  “...hypothesizing that early parchment manuscripts preserved context better than fragmented digital notes…”
+                <div className="mt-2.5 pt-2 border-t border-[var(--border)]/20 text-xs font-body italic text-[var(--text)] leading-relaxed">
+                  “Observing how vintage broadsheets structured their stories with layered headlines and distinct columns…”
                 </div>
               )}
             </div>
 
-            <div>
-              <h3 className="text-2xl font-heading font-medium tracking-normal text-[var(--text)] mb-2">
-                From verbal contemplation to structured prose.
+            <div className="pt-2 border-t border-[var(--border)]/30">
+              <h3 className="text-xl font-heading font-medium text-[var(--text)] mb-1">
+                From voice dictation to structured copy.
               </h3>
-              <p className="text-[var(--muted)] font-body text-base leading-relaxed">
-                Dictate your deepest thoughts while in motion. CreatorForge transcribes and synthesizes speech alongside your documents into coherent dissertations.
+              <p className="text-[var(--muted)] font-body text-sm leading-relaxed">
+                <strong className="text-[var(--text)] font-medium">Concrete Benefit:</strong> Record ideas on the move. CreatorForge transcribes and synthesizes your speech alongside your research into publication-ready copy.
               </p>
             </div>
           </SpotlightCard>
         </div>
 
-        {/* Cell 3: Brand Kit & Guidelines */}
+        {/* Feature 3: Brand Kit & Guidelines (5 cols) */}
         <div ref={(el) => (cardsRef.current[2] = el)} className="md:col-span-5 will-change-transform">
-          <SpotlightCard className="corner-flourish relative min-h-[350px] h-full flex flex-col justify-between p-8 bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] rounded-[4px] hover:border-[var(--accent)]/50 transition-colors shadow-lg">
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-2 rounded-[3px] border border-[var(--accent)]/30 bg-[var(--elevated)]/90 px-3 py-1 font-display text-[10.5px] uppercase tracking-[0.18em] text-[var(--accent)]">
-                <Feather size={13} className="text-[var(--accent)]" /> Discipline III · The Brand Lexicon
+          <SpotlightCard className="relative min-h-[350px] h-full flex flex-col justify-between p-7 md:p-8 bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] rounded-[4px]">
+            <div className="flex items-center justify-between mb-3">
+              <span className="inline-flex items-center gap-2 rounded-[2.88px] border border-[var(--border)] bg-[var(--elevated)] px-3 py-1 font-editorial-new text-xs uppercase tracking-wider text-[var(--text)]">
+                <Feather size={13} className="text-[var(--accent)]" /> Feature 03 · Editorial Lexicon
               </span>
             </div>
 
-            <div className="my-6 space-y-2.5">
-              <div className="p-3 rounded-[3px] bg-[var(--elevated)] border border-[var(--border)] flex items-center justify-between font-body shadow-sm hover:border-[var(--accent)]/40 transition-colors">
-                <span className="text-sm text-[var(--muted)]">Tone & Register</span>
-                <span className="text-sm font-medium text-[var(--text)] italic">Scholarly, authoritative, yet inviting</span>
+            <div className="my-4 space-y-2.5">
+              <div className="p-3 rounded-[3px] bg-[var(--elevated)] border border-[var(--border)] flex items-center justify-between font-body text-sm">
+                <span className="text-[var(--muted)]">Tonal Register</span>
+                <span className="font-medium text-[var(--text)] italic">Authoritative, journalistic</span>
               </div>
-              <div className="p-3 rounded-[3px] bg-[var(--elevated)] border border-[var(--border)] flex items-center justify-between font-body shadow-sm hover:border-[var(--accent)]/40 transition-colors">
-                <span className="text-sm text-[var(--muted)]">Target Audience</span>
-                <span className="text-sm font-medium text-[var(--text)] italic">Curators, researchers & thinkers</span>
+              <div className="p-3 rounded-[3px] bg-[var(--elevated)] border border-[var(--border)] flex items-center justify-between font-body text-sm">
+                <span className="text-[var(--muted)]">Forbidden Terms</span>
+                <span className="font-mono text-xs text-red-700 bg-red-100 dark:bg-red-950/40 px-2 py-0.5 rounded-[2px]">unleash, delve, tapestry</span>
               </div>
             </div>
 
-            <div>
-              <h3 className="text-2xl font-heading font-medium tracking-normal text-[var(--text)] mb-1.5">
-                Establish your intellectual signature.
+            <div className="pt-2 border-t border-[var(--border)]/30">
+              <h3 className="text-xl font-heading font-medium text-[var(--text)] mb-1">
+                Establish your immutable house voice.
               </h3>
-              <p className="text-[var(--muted)] font-body text-base leading-relaxed">
-                Inscribe your distinctive voice, rhetoric, and rules of engagement once. Every generated draft adheres strictly to your canon.
+              <p className="text-[var(--muted)] font-body text-sm leading-relaxed">
+                <strong className="text-[var(--text)] font-medium">Concrete Benefit:</strong> Define your style manual, prohibited clichés, and audience once. Every article, tweet, and script strictly maintains your cadence.
               </p>
             </div>
           </SpotlightCard>
         </div>
 
-        {/* Cell 4: 1-Click Multi-Format Remix with Wax Seal */}
+        {/* Feature 4: 1-Click Multi-Format Remix (7 cols) */}
         <div ref={(el) => (cardsRef.current[3] = el)} className="md:col-span-7 will-change-transform">
-          <SpotlightCard className="corner-flourish relative min-h-[350px] h-full flex flex-col justify-between p-8 bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] overflow-hidden rounded-[4px] hover:border-[var(--accent)]/50 transition-colors shadow-lg">
-            {/* Authentic Crimson Wax Seal Badge */}
-            <div
-              className="wax-seal -top-3 right-6 cursor-pointer hover:rotate-6 transition-transform duration-300 shadow-md"
-              title="Official Scholarly Seal"
-            >
-              <Sparkles size={18} className="text-[#F5EFEB]" />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-2 rounded-[3px] border border-[var(--accent)]/30 bg-[var(--elevated)]/90 px-3 py-1 font-display text-[10.5px] uppercase tracking-[0.18em] text-[var(--accent)]">
-                <WandSparkles size={13} className="text-[var(--accent)]" /> Discipline IV · Transmutation
+          <SpotlightCard className="relative min-h-[350px] h-full flex flex-col justify-between p-7 md:p-8 bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] overflow-hidden rounded-[4px]">
+            <div className="flex items-center justify-between mb-3">
+              <span className="inline-flex items-center gap-2 rounded-[2.88px] border border-[var(--border)] bg-[var(--elevated)] px-3 py-1 font-editorial-new text-xs uppercase tracking-wider text-[var(--text)]">
+                <WandSparkles size={13} className="text-[var(--accent)]" /> Feature 04 · Cross-Format Remix
               </span>
+              <span className="text-xs font-mono font-medium text-[var(--accent)]">1-CLICK PRESS</span>
             </div>
 
-            <div className="my-5 p-4 rounded-[4px] bg-[var(--elevated)] border border-[var(--border)] shadow-inner">
+            <div className="my-3 p-4 rounded-[3px] bg-[var(--elevated)] border border-[var(--border)]">
               <div className="flex flex-wrap gap-2 mb-3">
                 {formats.map((f) => (
                   <button
                     key={f}
                     type="button"
                     onClick={() => setSelectedFormat(f)}
-                    className={`px-3 py-1 font-display text-[11px] uppercase tracking-wider rounded-[3px] transition-all cursor-pointer ${
+                    className={`px-3 py-1 font-body text-xs rounded-[2.88px] transition-all cursor-pointer border ${
                       selectedFormat === f
-                        ? 'bg-gradient-to-b from-[#C49E4A] via-[#A27B2B] to-[#87621B] text-[#FCFAF6] font-semibold shadow-sm scale-105'
-                        : 'bg-[var(--surface)] text-[var(--muted)] border border-[var(--border)] hover:text-[var(--text)] hover:border-[var(--accent)]/40 shadow-sm'
+                        ? 'bg-[var(--text)] text-[var(--bg)] border-[var(--border)] font-medium'
+                        : 'bg-[var(--surface)] text-[var(--text)] border-[var(--border)] hover:bg-[var(--elevated)]'
                     }`}
                   >
                     {f}
@@ -342,27 +311,86 @@ export function BentoGrid() {
                 ))}
               </div>
 
-              {/* Dynamic live sample preview card */}
-              <div className="text-sm font-body text-[var(--text)] bg-[var(--surface)] p-3.5 rounded-[3px] border border-[var(--border)] shadow-sm space-y-1.5 transition-all">
-                <div className="flex items-center justify-between text-[11px] font-display uppercase tracking-widest text-[var(--accent)] pb-1.5 border-b border-[var(--border)]/60">
-                  <span className="flex items-center gap-1.5">
-                    <Check size={12} className="text-[var(--accent)]" />
+              <div className="text-sm font-body text-[var(--text)] bg-[var(--surface)] p-3.5 rounded-[3px] border border-[var(--border)] space-y-1">
+                <div className="flex items-center justify-between text-xs font-body uppercase tracking-wider text-[var(--accent)] pb-1 border-b border-[var(--border)]/30">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <Check size={13} />
                     {FORMAT_PREVIEWS[selectedFormat].badge}
                   </span>
-                  <span className="text-[10px] text-[var(--muted)]">Voice: Verified</span>
+                  <span className="text-xs text-[var(--muted)]">Style Verified</span>
                 </div>
-                <p className="text-xs sm:text-sm text-[var(--text)] font-body leading-relaxed whitespace-pre-line italic pt-1">
+                <p className="text-sm text-[var(--text)] font-body leading-relaxed whitespace-pre-line italic pt-1">
                   {FORMAT_PREVIEWS[selectedFormat].text}
                 </p>
               </div>
             </div>
 
-            <div>
-              <h3 className="text-2xl font-heading font-medium tracking-normal text-[var(--text)] mb-1.5">
-                Turn a single insight into a scholarly canon.
+            <div className="pt-2 border-t border-[var(--border)]/30">
+              <h3 className="text-xl sm:text-2xl font-heading font-medium text-[var(--text)] mb-1">
+                Turn one thesis into a multi-channel campaign.
               </h3>
-              <p className="text-[var(--muted)] font-body text-base leading-relaxed">
-                Repurpose any foundational thesis or lecture into concise dispatches, monograph chapters, or video scripts in your voice.
+              <p className="text-[var(--muted)] font-body text-sm leading-relaxed">
+                <strong className="text-[var(--text)] font-medium">Concrete Benefit:</strong> Repurpose foundational interviews and essays into dispatches, threads, columns, or video scripts without losing nuance.
+              </p>
+            </div>
+          </SpotlightCard>
+        </div>
+
+        {/* Feature 5: Grounded Citations & Anti-Hallucination (6 cols) */}
+        <div ref={(el) => (cardsRef.current[4] = el)} className="md:col-span-6 will-change-transform">
+          <SpotlightCard className="relative min-h-[300px] h-full flex flex-col justify-between p-7 md:p-8 bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] rounded-[4px]">
+            <div className="flex items-center justify-between mb-3">
+              <span className="inline-flex items-center gap-2 rounded-[2.88px] border border-[var(--border)] bg-[var(--elevated)] px-3 py-1 font-editorial-new text-xs uppercase tracking-wider text-[var(--text)]">
+                <BookmarkCheck size={13} className="text-[var(--accent)]" /> Feature 05 · Source Grounding
+              </span>
+              <span className="text-xs font-mono text-emerald-700 bg-emerald-100 dark:bg-emerald-950/40 px-2 py-0.5 rounded-[2px] font-semibold">100% CITED</span>
+            </div>
+
+            <div className="my-3 p-4 rounded-[3px] bg-[var(--elevated)] border border-[var(--border)]">
+              <div className="flex items-center gap-2 text-xs font-body text-[var(--text)] pb-2 mb-2 border-b border-[var(--border)]/30">
+                <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+                <span>Traceable Citation Anchor</span>
+              </div>
+              <p className="text-xs font-body text-[var(--muted)] leading-relaxed italic">
+                “Synthesized from <span className="underline decoration-[var(--accent)] text-[var(--text)] font-medium">interview-transcript-p4.pdf</span> and <span className="underline decoration-[var(--accent)] text-[var(--text)] font-medium">field-recording-02.m4a</span>. No speculative claims added.”
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-[var(--border)]/30">
+              <h3 className="text-xl font-heading font-medium text-[var(--text)] mb-1">
+                Zero hallucination, verified citations.
+              </h3>
+              <p className="text-[var(--muted)] font-body text-sm leading-relaxed">
+                <strong className="text-[var(--text)] font-medium">Concrete Benefit:</strong> Publish with complete confidence knowing every paragraph directly traces back to your uploaded notes, eliminating embarrassing factual blunders.
+              </p>
+            </div>
+          </SpotlightCard>
+        </div>
+
+        {/* Feature 6: Private Vault & Non-Training Guarantee (6 cols) */}
+        <div ref={(el) => (cardsRef.current[5] = el)} className="md:col-span-6 will-change-transform">
+          <SpotlightCard className="relative min-h-[300px] h-full flex flex-col justify-between p-7 md:p-8 bg-[var(--surface)] border border-[var(--border)] text-[var(--text)] rounded-[4px]">
+            <div className="flex items-center justify-between mb-3">
+              <span className="inline-flex items-center gap-2 rounded-[2.88px] border border-[var(--border)] bg-[var(--elevated)] px-3 py-1 font-editorial-new text-xs uppercase tracking-wider text-[var(--text)]">
+                <Lock size={13} className="text-[var(--accent)]" /> Feature 06 · Private Scriptorium
+              </span>
+              <span className="text-xs font-mono text-[var(--accent)] font-semibold">NO AI TRAINING</span>
+            </div>
+
+            <div className="my-3 p-4 rounded-[3px] bg-[var(--elevated)] border border-[var(--border)] flex items-center gap-3">
+              <ShieldCheck size={28} className="text-[var(--accent)] shrink-0" />
+              <div className="text-xs font-body text-[var(--muted)]">
+                <strong className="block text-[var(--text)] font-medium mb-0.5">Zero Data Leakage Boundary</strong>
+                Your drafts, audio transcripts, and proprietary archives are never used to train public models.
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-[var(--border)]/30">
+              <h3 className="text-xl font-heading font-medium text-[var(--text)] mb-1">
+                Your intellectual property stays yours.
+              </h3>
+              <p className="text-[var(--muted)] font-body text-sm leading-relaxed">
+                <strong className="text-[var(--text)] font-medium">Concrete Benefit:</strong> Safely craft unreleased books, private investigative journalism, and sensitive client strategies in an isolated studio.
               </p>
             </div>
           </SpotlightCard>
@@ -371,4 +399,3 @@ export function BentoGrid() {
     </section>
   );
 }
-
