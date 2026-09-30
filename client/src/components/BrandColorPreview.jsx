@@ -10,17 +10,17 @@ export function BrandColorPreview({ colors = '' }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2 mt-2" aria-label="Brand color swatches preview">
-      <span className="text-xs font-editorial-new text-[var(--color-charcoal)] mr-1">Preview:</span>
+      <span className="text-xs font-editorial-new text-[var(--muted)] mr-1">Preview:</span>
       {hexList.map((hex, i) => (
         <span
           key={`${hex}-${i}`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[2.88px] text-xs font-mono border border-[var(--color-ink-black)] bg-[var(--color-parchment)] text-[var(--color-ink-black)] shadow-[var(--shadow-sm)]"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[2.88px] text-xs font-mono border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] shadow-[var(--shadow-sm)]"
         >
           <span
-            className="w-3.5 h-3.5 rounded-none border border-[var(--color-ink-black)]"
+            className="w-3.5 h-3.5 rounded-none border border-[var(--border)]"
             style={{ backgroundColor: hex }}
           />
-          <span className="text-[var(--color-ink-black)]">{hex}</span>
+          <span className="text-[var(--text)]">{hex}</span>
         </span>
       ))}
     </div>
