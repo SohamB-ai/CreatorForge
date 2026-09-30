@@ -33,29 +33,51 @@
   -webkit-font-smoothing: antialiased;
 }
 
-:root[data-theme="light"] {
+:root[data-theme="light"],
+:root.light {
   color-scheme: light;
-  --bg: #F5EFEB;
-  --surface: #FCFAF6;
-  --elevated: #ECE3D7;
+  --bg: #F8F4EE;
+  --surface: #FFFFFF;
+  --elevated: #F2ECE2;
   --surface-popover: #FFFFFF;
-  --border: #D8CCC0;
-  --border-subtle: rgba(216, 204, 192, 0.6);
-  --border-strong: #A37E36;
-  --text: #2A221B;
-  --muted: #78695C;
-  --accent: #A37E36;
-  --accent-light: #B8953F;
+  --border: #DDD3C4;
+  --border-subtle: rgba(221, 211, 196, 0.75);
+  --border-strong: #96742E;
+  --text: #1F1A16;
+  --muted: #5E4E41;
+  --accent: #8E6B23;
+  --accent-light: #A68032;
   --accent-secondary: #8B2635;
-  --primary: #A37E36;
-  --primary-hover: #8F6C2A;
-  --primary-foreground: #FCFAF6;
-  --brass-gradient: linear-gradient(180deg, #C29F55 0%, #A37E36 50%, #8F6C2A 100%);
-  --synthesis: #A37E36;
-  --amber-flare: #A37E36;
-  --soft: rgba(163, 126, 54, 0.1);
-  --input: #FCFAF6;
+  --primary: #8E6B23;
+  --primary-hover: #755619;
+  --primary-foreground: #1C1714;
+  --brass-gradient: linear-gradient(180deg, #D4AF57 0%, #B88B2E 50%, #9B701D 100%);
+  --synthesis: #8E6B23;
+  --amber-flare: #8E6B23;
+  --soft: rgba(142, 107, 35, 0.10);
+  --input: #FCFBF9;
   --card-shadow: 0 4px 20px -2px rgba(42, 34, 27, 0.08), 0 2px 6px -1px rgba(42, 34, 27, 0.04);
+}
+
+/* Atmosphere Vignette & Paper Grain */
+.vignette-overlay {
+  background: radial-gradient(ellipse at center, transparent 0%, transparent 68%, rgba(142, 107, 35, 0.04) 100%);
+}
+
+:root[data-theme="dark"] .vignette-overlay,
+.dark .vignette-overlay {
+  background: radial-gradient(ellipse at center, transparent 0%, transparent 55%, rgba(28, 23, 20, 0.45) 100%);
+}
+
+.paper-noise-overlay {
+  opacity: 0.02;
+  mix-blend-mode: multiply;
+}
+
+:root[data-theme="dark"] .paper-noise-overlay,
+.dark .paper-noise-overlay {
+  opacity: 0.035;
+  mix-blend-mode: overlay;
 }
 
 * {
@@ -219,28 +241,34 @@ p {
 .primary {
   background: var(--brass-gradient);
   color: var(--primary-foreground);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.25);
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.2), 0 2px 8px var(--soft);
+}
+
+:root[data-theme="dark"] .primary,
+.dark .primary {
   text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.4), -1px -1px 1px rgba(255, 255, 255, 0.2);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .primary:hover:not(:disabled) {
-  filter: brightness(1.1);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 4px 16px rgba(201, 169, 98, 0.45);
+  filter: brightness(1.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 4px 16px var(--soft);
 }
 
 .secondary {
   border: 1.5px solid var(--accent);
   background: transparent;
   color: var(--accent);
-  box-shadow: inset 0 1px 0 rgba(201, 169, 98, 0.15);
+  box-shadow: inset 0 1px 0 var(--soft);
 }
 
 .secondary:hover:not(:disabled) {
   background: var(--accent-secondary);
   border-color: var(--accent-secondary);
-  color: #E8DFD4;
-  box-shadow: 0 4px 16px rgba(139, 38, 53, 0.45);
+  color: #FCFAF6;
+  box-shadow: 0 4px 16px rgba(139, 38, 53, 0.4);
 }
 
 /* -------------------------------------------------------------
@@ -271,6 +299,11 @@ p {
   margin-right: 0.75rem;
   margin-top: 0.2rem;
   color: var(--accent);
+  text-shadow: 1px 1px 2px rgba(142, 107, 35, 0.2);
+}
+
+:root[data-theme="dark"] .drop-cap::first-letter,
+.dark .drop-cap::first-letter {
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.35);
 }
 
@@ -361,7 +394,7 @@ p {
 .ornate-divider {
   position: relative;
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, #4A3F35 20%, #C9A962 50%, #4A3F35 80%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, var(--border) 20%, var(--accent) 50%, var(--border) 80%, transparent 100%);
   margin: 3.5rem 0;
   display: flex;
   align-items: center;
@@ -1041,7 +1074,7 @@ input:focus, textarea:focus, select:focus {
   justify-content: center;
   border-radius: 50%;
   background: var(--soft);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  border: 1px solid var(--accent);
   font-size: 12.5px;
   font-weight: 600;
   color: var(--accent);
@@ -1620,7 +1653,7 @@ input:focus, textarea:focus, select:focus {
   width: 64px;
   height: 64px;
   margin: 0 auto 20px;
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  border: 1px solid var(--accent);
   border-radius: 16px;
   background: var(--soft);
   color: var(--accent);

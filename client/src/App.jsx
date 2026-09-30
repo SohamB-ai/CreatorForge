@@ -49,6 +49,7 @@ import { ShimmerButton } from './components/ShimmerButton.jsx';
 import { BrandColorPreview } from './components/BrandColorPreview.jsx';
 import { OrnateDivider } from './components/OrnateDivider.jsx';
 import { AtmosphereOverlay } from './components/AtmosphereOverlay.jsx';
+import { GoldenCursorTrail } from './components/GoldenCursorTrail.jsx';
 
 const Auth = createContext(null);
 const Toast = createContext(null);
@@ -291,6 +292,7 @@ function Landing() {
 
   return (
     <div className="landing max-w-6xl mx-auto px-6 py-4">
+      <GoldenCursorTrail />
       <header className="landing-header border-b border-[#4A3F35] py-5 flex items-center justify-between">
         <Logo />
         <div className="landing-actions flex items-center gap-6">

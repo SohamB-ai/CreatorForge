@@ -3,7 +3,7 @@ import { useRef } from 'react';
 export function SpotlightCard({
   children,
   className = '',
-  spotlightColor = 'rgba(139, 92, 246, 0.15)',
+  spotlightColor = 'var(--soft)',
   ...props
 }) {
   const containerRef = useRef(null);
@@ -21,7 +21,7 @@ export function SpotlightCard({
     <div
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      className={`spotlight-card group relative overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/60 p-6 transition-all duration-200 ${className}`}
+      className={`spotlight-card group relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] p-6 transition-all duration-200 shadow-[var(--card-shadow)] ${className}`}
       {...props}
     >
       <div

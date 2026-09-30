@@ -4,6 +4,7 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
+  box-shadow: var(--card-shadow);
 }
 
 .saved-content-toolbar,
@@ -31,7 +32,7 @@
   gap: 6px;
   padding: 3px 10px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--elevated);
   border: 1px solid var(--border);
 }
 
@@ -41,15 +42,16 @@
   font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
   line-height: 1.6;
-  background: var(--elevated);
-  border: 1px solid var(--border-strong);
+  background: var(--input);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 14px;
 }
 
 .saved-content textarea:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(255, 94, 30, 0.2);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--soft);
 }
 
 .saved-content .markdown,
@@ -61,6 +63,7 @@
   line-height: 1.7;
   padding: 16px;
   background: var(--elevated);
+  color: var(--text);
   border-radius: 8px;
   border: 1px solid var(--border);
 }
@@ -101,7 +104,8 @@
 
 .saved-content-export select {
   width: 100%;
-  background: var(--elevated);
+  background: var(--input);
+  color: var(--text);
   border-color: var(--border);
 }
 
