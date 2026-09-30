@@ -29,6 +29,9 @@ import {
   Video,
   WandSparkles,
   X,
+  BookOpen,
+  Feather,
+  Scroll,
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -44,6 +47,8 @@ import { BentoGrid } from './components/BentoGrid.jsx';
 import { TrustWall } from './components/TrustWall.jsx';
 import { ShimmerButton } from './components/ShimmerButton.jsx';
 import { BrandColorPreview } from './components/BrandColorPreview.jsx';
+import { OrnateDivider } from './components/OrnateDivider.jsx';
+import { AtmosphereOverlay } from './components/AtmosphereOverlay.jsx';
 
 const Auth = createContext(null);
 const Toast = createContext(null);
@@ -55,16 +60,19 @@ const sizeLabel = (size) => size < 1024 ? `${size} B` : size < 1024 * 1024 ? `${
 
 function Logo() {
   return (
-    <Link className="logo" to="/">
-      <span className="logo-mark" title="CreatorForge">
-        <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" viewBox="0 0 24 24">
-          <path d="M12 19l7-7 3 3-7 7-3-3z" />
-          <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
-          <path d="M2 2l7.586 7.586" />
-          <circle cx="11" cy="11" r="2" />
-        </svg>
+    <Link
+      className="logo inline-flex items-center justify-center group py-1"
+      to="/"
+      aria-label="CreatorForge"
+      title="CreatorForge"
+    >
+      <span className="w-11 h-11 sm:w-12 sm:h-12 rounded-[6px] border-2 border-[#C9A962] bg-[#1C1714]/60 flex items-center justify-center shadow-[0_0_14px_rgba(201,169,98,0.25)] group-hover:border-[#D4B872] group-hover:shadow-[0_0_22px_rgba(201,169,98,0.55)] group-hover:scale-105 transition-all duration-300">
+        <img
+          src="/assets/pen_and_sword_badge.svg"
+          alt="CreatorForge insignia"
+          className="w-7 h-7 sm:w-8 sm:h-8 filter brightness-110 drop-shadow"
+        />
       </span>
-      <span className="font-semibold tracking-tight">Creator<span className="logo-light font-normal text-zinc-400">Forge</span></span>
     </Link>
   );
 }
@@ -102,6 +110,7 @@ function Dialog({ title, onClose, children }) {
   return (
     <dialog
       ref={reference}
+      data-lenis-prevent
       onCancel={(event) => {
         event.preventDefault();
         onClose();
@@ -192,6 +201,7 @@ export default function App() {
   return (
     <Auth.Provider value={auth}>
       <Toast.Provider value={(message, kind = 'success') => setToast({ message, kind })}>
+        <AtmosphereOverlay />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<AuthPage />} />
@@ -241,25 +251,25 @@ function Shell({ children, workspace = false }) {
 
   return (
     <div className={`app-shell ${workspace ? 'workspace-shell' : ''}`}>
-      <header className="app-header border-b border-white/[0.08] bg-[#0e0e13]/95 backdrop-blur-md">
+      <header className="app-header border-b border-[#4A3F35] bg-[#1C1714]/95 backdrop-blur-md">
         <Logo />
-        <nav aria-label="Main navigation">
-          <Link to="/dashboard" className="nav-link" aria-label="Projects">
-            <LayoutGrid size={17} />
-            <span>Projects</span>
+        <nav aria-label="Main navigation" className="font-display text-xs tracking-wider">
+          <Link to="/dashboard" className="nav-link text-[#E8DFD4] hover:text-[#C9A962]" aria-label="Projects">
+            <LayoutGrid size={16} className="text-[#C9A962]" />
+            <span>Archives</span>
           </Link>
-          <Link to="/settings/brandkit" className="nav-link" aria-label="Brand kit">
-            <Palette size={17} />
-            <span>Brand kit</span>
+          <Link to="/settings/brandkit" className="nav-link text-[#E8DFD4] hover:text-[#C9A962]" aria-label="Brand kit">
+            <Palette size={16} className="text-[#C9A962]" />
+            <span>Lexicon</span>
           </Link>
         </nav>
         <div className="account flex items-center gap-3">
           <ThemeButton />
-          <span className="avatar bg-orange-500/20 border border-orange-500/30 text-orange-300 font-semibold" title={auth.user.name}>
+          <span className="avatar bg-[#C9A962]/20 border border-[#C9A962]/40 text-[#D4B872] font-semibold font-display" title={auth.user.name}>
             {auth.user.name.slice(0, 1).toUpperCase()}
           </span>
           <button
-            className="icon-button"
+            className="icon-button hover:text-[#C9A962]"
             aria-label="Sign out"
             onClick={() => {
               auth.logout();
@@ -280,104 +290,154 @@ function Landing() {
   const next = auth.user ? '/dashboard' : '/register';
 
   return (
-    <div className="landing">
-      <header className="landing-header">
+    <div className="landing max-w-6xl mx-auto px-6 py-4">
+      <header className="landing-header border-b border-[#4A3F35] py-5 flex items-center justify-between">
         <Logo />
-        <div className="landing-actions">
+        <div className="landing-actions flex items-center gap-6">
           <ThemeButton />
-          <Link className="text-button" to={auth.user ? '/dashboard' : '/login'}>
-            {auth.user ? 'Your workspace' : 'Sign in'}
-            <ArrowRight size={16} />
+          <Link
+            className="font-display text-xs uppercase tracking-[0.2em] text-[#C9A962] hover:tracking-[0.26em] hover:text-[#D4B872] transition-all flex items-center gap-2"
+            to={auth.user ? '/dashboard' : '/login'}
+          >
+            {auth.user ? 'Enter Scriptorium' : 'Access Archives'}
+            <ArrowRight size={14} />
           </Link>
         </div>
       </header>
 
       <main>
-        <section className="hero">
-          <div className="hero-copy">
-            <h1>
-              Many sources.{' '}<br />One creative{' '}<br /><span>direction.</span>
+        {/* Volume I: The Scriptorium Hero */}
+        <section className="hero py-16 md:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div className="hero-copy lg:col-span-6">
+            <span className="font-display text-[11px] font-semibold tracking-[0.3em] uppercase text-[#C9A962] mb-4 block">
+              Volume I · The Scriptorium
+            </span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-medium tracking-tight text-[#E8DFD4] leading-[1.08] mb-6">
+              Many sources.<br />
+              One enduring<br />
+              <span className="text-[#C9A962] italic font-normal">scholarship.</span>
             </h1>
-            <p>
-              Your images, voice notes, videos, and briefs belong together. Bring them into one workspace, then turn what you have into what comes next.
+            <p className="drop-cap text-lg text-[#9C8B7A] font-body leading-relaxed max-w-lg mb-8">
+              Gather your archival plates, vocal dictations, film fragments, and historical folios into one consecrated study. Transform scattered thoughts into timeless manuscripts in your distinctive voice.
             </p>
             <div className="flex flex-wrap items-center gap-4">
-              <ShimmerButton to={next} className="primary" background="var(--primary)">
-                Start creating <ArrowRight size={18} />
+              <ShimmerButton to={next} className="primary">
+                Inscribe Your Work <ArrowRight size={16} />
               </ShimmerButton>
               <Link to={auth.user ? '/dashboard' : '/login'} className="button secondary">
-                Sign in
+                Consult Archives
               </Link>
             </div>
           </div>
 
-          <div className="source-board border border-white/[0.08] bg-[#121217]" aria-label="Images, audio, video and documents come together in CreatorForge">
-            <div className="board-header">
-              <span>YOUR CREATIVE INPUTS</span>
-            </div>
-
-            <div className="source-tile image-tile">
-              <img src="/assets/creative_studio_art.jpg" alt="Reference artwork" />
-              <span><Image size={15} />Reference images</span>
-            </div>
-
-            <div className="source-tile audio-tile bg-[#181820]">
-              <div className="waveform">
-                {[20, 38, 24, 58, 40, 72, 50, 34, 64, 82, 45, 28, 52, 36, 16].map((height, index) => (
-                  <i key={index} style={{ height: `${height}%`, background: 'linear-gradient(to top, #ea580c, #fb923c)' }} />
-                ))}
+          <div className="hero-visual lg:col-span-6 relative">
+            <div className="ornate-frame p-6 md:p-8 rounded-[4px] border border-[#4A3F35] bg-[#251E19] shadow-2xl">
+              <div className="flex items-center justify-between border-b border-[#4A3F35] pb-3 mb-5 font-display text-[10.5px] uppercase tracking-[0.22em] text-[#C9A962]">
+                <span className="flex items-center gap-2">
+                  <BookOpen size={14} /> The Archival Desk
+                </span>
+                <span className="text-[#9C8B7A]">Folio 01 · Active</span>
               </div>
-              <span><AudioLines size={15} />Voice & audio</span>
-            </div>
 
-            <div className="source-tile doc-tile bg-[#181820]">
-              <div className="document-lines">
-                <i /><i /><i /><i />
+              {/* Cathedral Arch-Topped Feature Plate */}
+              <div className="arch-top overflow-hidden border border-[#4A3F35] bg-[#1C1714] mb-5 relative group">
+                <img
+                  src="/assets/creative_studio_art.jpg"
+                  alt="Archival study and creative references"
+                  className="w-full h-56 object-cover object-center sepia-reveal hover:scale-105 transition-all duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#1C1714] via-transparent to-transparent opacity-80" />
+                <span className="absolute bottom-3 left-4 inline-flex items-center gap-2 font-display text-[10px] uppercase tracking-[0.16em] text-[#E8DFD4] bg-[#1C1714]/85 px-2.5 py-1 rounded-[3px] border border-[#4A3F35]">
+                  <Image size={12} className="text-[#C9A962]" /> Reference Plate · Oil on Canvas
+                </span>
               </div>
-              <span><FileText size={15} />Briefs & documents</span>
-            </div>
 
-            <div className="source-tile video-tile bg-[#181820]">
-              <Video size={38} strokeWidth={1.25} className="text-orange-400" />
-              <span>Video & stories</span>
-            </div>
+              {/* Multi-source cards grid */}
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                <div className="p-3 rounded-[3px] bg-[#1C1714] border border-[#4A3F35] flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-xs text-[#9C8B7A] font-display">
+                    <span className="flex items-center gap-1.5"><AudioLines size={12} className="text-[#C9A962]" /> Voice Record</span>
+                    <span className="font-mono text-[10px] text-[#C9A962]">02:45</span>
+                  </div>
+                  <div className="h-6 flex items-center gap-1 mt-2">
+                    {[35, 70, 45, 90, 60, 40, 80, 50, 25, 65, 85, 30].map((h, i) => (
+                      <span key={i} style={{ height: `${h}%` }} className="w-1 bg-[#C9A962] rounded-[1px] opacity-75" />
+                    ))}
+                  </div>
+                </div>
 
-            <div className="board-result bg-[#181820] border border-white/[0.08]">
-              <span className="result-icon text-orange-400"><Sparkles size={20} /></span>
-              <div>
-                <strong>Context becomes content.</strong>
-                <small>Ground your writing in real project assets</small>
+                <div className="p-3 rounded-[3px] bg-[#1C1714] border border-[#4A3F35] flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-xs text-[#9C8B7A] font-display">
+                    <span className="flex items-center gap-1.5"><FileText size={12} className="text-[#C9A962]" /> Research Brief</span>
+                    <span className="text-[10px] text-[#9C8B7A]">V. 3.2</span>
+                  </div>
+                  <div className="space-y-1.5 mt-2">
+                    <div className="h-1 bg-[#4A3F35] w-full rounded-[1px]" />
+                    <div className="h-1 bg-[#4A3F35] w-3/4 rounded-[1px]" />
+                    <div className="h-1 bg-[#C9A962]/40 w-1/2 rounded-[1px]" />
+                  </div>
+                </div>
               </div>
-              <ArrowUp size={20} className="text-orange-400" />
+
+              {/* Synthesis result indicator */}
+              <div className="p-3.5 rounded-[3px] bg-[#1C1714] border border-[#C9A962]/40 flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-full border border-[#C9A962] bg-[#251E19] flex items-center justify-center text-[#C9A962] shadow-sm">
+                    <Sparkles size={15} />
+                  </span>
+                  <div>
+                    <strong className="block text-sm font-heading font-medium text-[#E8DFD4] tracking-normal">
+                      Context becomes canon.
+                    </strong>
+                    <small className="text-xs text-[#9C8B7A] font-body">
+                      Synthesized into high-impact essays and scripts
+                    </small>
+                  </div>
+                </div>
+                <ArrowUp size={16} className="text-[#C9A962]" />
+              </div>
             </div>
           </div>
         </section>
 
+        <OrnateDivider glyph="✶" />
+
         <TrustWall />
+
+        <OrnateDivider glyph="❧" />
 
         <BentoGrid />
 
-        {/* Bottom CTA Banner */}
-        <section className="my-16 p-10 md:p-14 rounded-2xl bg-[#121217] border border-white/[0.08] text-center relative overflow-hidden">
-          <h2 className="text-2xl md:text-4xl font-bold tracking-tight text-white mb-3">
-            Ready to organize your source material?
+        <OrnateDivider glyph="✤" />
+
+        {/* Volume IV: The Proclamation / Call to Action */}
+        <section className="my-20 p-10 md:p-16 rounded-[4px] bg-[#251E19] border border-[#4A3F35] text-center relative ornate-frame max-w-4xl mx-auto shadow-2xl">
+          <span className="font-display text-[10.5px] font-semibold tracking-[0.3em] uppercase text-[#C9A962] mb-3 block">
+            Volume IV · The Proclamation
+          </span>
+          <h2 className="text-3xl md:text-5xl font-heading font-medium tracking-tight text-[#E8DFD4] mb-4">
+            Ready to inscribe your creative legacy?
           </h2>
-          <p className="text-zinc-400 text-sm md:text-base max-w-lg mx-auto mb-8 leading-relaxed">
-            Create your first project, upload your references and voice notes, and start writing in your voice.
+          <p className="text-[#9C8B7A] font-body text-lg max-w-xl mx-auto mb-9 leading-relaxed">
+            Create your first project archive, deposit your research and vocal dictations, and craft with unyielding scholarly conviction.
           </p>
-          <Link to={next} className="button primary mx-auto">
-            Get started <ArrowRight size={18} />
-          </Link>
+          <div className="flex justify-center">
+            <ShimmerButton to={next} className="primary">
+              Commence Creation <ArrowRight size={16} />
+            </ShimmerButton>
+          </div>
         </section>
       </main>
 
-      <footer className="landing-footer flex flex-col sm:flex-row items-center justify-between py-8 border-t border-white/[0.08] text-sm text-zinc-400 gap-4">
+      <footer className="landing-footer flex flex-col sm:flex-row items-center justify-between py-10 border-t border-[#4A3F35] text-xs font-body text-[#9C8B7A] gap-4">
         <div className="flex items-center gap-3">
           <Logo />
-          <span className="text-xs text-zinc-500">A home for your source material and writing.</span>
+          <span className="font-display text-[10px] tracking-wider uppercase text-[#9C8B7A]">
+            A sanctuary for source preservation and scholarly craft.
+          </span>
         </div>
-        <div className="text-xs text-zinc-500">
-          © {new Date().getFullYear()} CreatorForge
+        <div className="font-display text-[10px] tracking-widest uppercase text-[#9C8B7A]">
+          Anno Domini MMXXVI · CreatorForge · All rights reserved.
         </div>
       </footer>
     </div>
@@ -1024,39 +1084,13 @@ function Workspace() {
             <Pencil size={15} />
           </button>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>LIVE SYNCED</span>
-          </span>
-          <span className="text-xs font-mono text-zinc-400 border border-white/[0.08] px-2.5 py-0.5 rounded bg-white/[0.03]">
-            Gemini 3.8 Flash Active
-          </span>
-        </div>
       </div>
 
       <main className="workspace">
         <aside className="media-rail bg-[#121217] border-r border-white/[0.08]">
           <div className="rail-title mb-4">
-            <div className="flex items-center justify-between">
-              <h2>Source library <span className="count">{media.length}</span></h2>
-              <span className="text-[10px] font-mono text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20">VAULT</span>
-            </div>
-            <span className="muted text-xs">Your project's context memory</span>
-          </div>
-
-          {/* Active Voiceprint Indicator Card from Stitch MCP */}
-          <div className="mb-4 p-3 rounded-lg bg-[#181820] border border-white/[0.08]">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider">Voiceprint</span>
-              <span className="text-[10px] font-mono text-emerald-400">99.4% Calibrated</span>
-            </div>
-            <div className="text-xs font-semibold text-white">Neo-Tokyo Noir v2.8</div>
-            <div className="flex flex-wrap gap-1 mt-2">
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-300">Cinematic</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-300">Direct</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-300">Punchy</span>
-            </div>
+            <h2>Source library <span className="count">{media.length}</span></h2>
+            <span className="muted text-xs">Project files and references</span>
           </div>
 
           <input
@@ -1138,11 +1172,6 @@ function Workspace() {
             <Sparkles size={15} className="text-orange-400" />
             <span>Chat uses every asset in this project.<br />Remix focuses on the one you choose.</span>
           </div>
-
-          <div className="mt-4 pt-3 border-t border-white/[0.06] text-[11px] font-mono text-zinc-400 flex items-center justify-between">
-            <span>SSD Vault: 1.8 GB / 10 GB</span>
-            <span className="text-orange-400 font-semibold">Pro Tier</span>
-          </div>
         </aside>
 
         <section className="creation-panel bg-[#09090b]">
@@ -1204,10 +1233,6 @@ function Workspace() {
                       <span className="sparkle-mark bg-orange-500/10 border border-orange-500/20 text-orange-400">
                         <Sparkles size={28} strokeWidth={1.5} />
                       </span>
-                      <div className="eyebrow">
-                        <span className="status-dot" />
-                        LET'S CONNECT THE DOTS
-                      </div>
                       <h1>What are we creating today?</h1>
                       <p>
                         {media.length
@@ -1322,8 +1347,7 @@ function Workspace() {
               </>
             ) : (
               <div className="remix-panel">
-                <div className="eyebrow">ONE SOURCE. NEW POSSIBILITIES.</div>
-                <h1>Give your content a second life.</h1>
+                <h1 className="text-2xl font-bold text-white mb-1">Give your content a second life.</h1>
                 <p className="muted">Choose a source, pick a format, and let your brand lead the way.</p>
 
                 <form onSubmit={remix} className="remix-form">
@@ -1454,15 +1478,11 @@ function BrandSettings() {
         </Link>
         <div className="page-title flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <div className="eyebrow flex items-center gap-2">
-              <span className="status-dot" />
-              VOICEPRINT & BRAND GOVERNANCE · ZERO-DRIFT ENGINE
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white my-2">Your brand. Your voice.</h1>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white mb-2">Your brand. Your voice.</h1>
             <p className="text-zinc-400 text-sm">Give every creation a familiar direction, without repeating yourself.</p>
           </div>
-          <span className="brand-emblem flex items-center justify-center w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-400 shadow-[0_0_20px_rgba(255,94,30,0.15)] shrink-0">
-            <Palette size={32} />
+          <span className="brand-emblem flex items-center justify-center w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-400 shrink-0">
+            <Palette size={28} />
           </span>
         </div>
 
@@ -1471,9 +1491,8 @@ function BrandSettings() {
         ) : (
           <div className="brand-layout grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
             <form onSubmit={save} className="brand-form bg-[#121217] border border-white/[0.08] p-6 md:p-8 rounded-2xl shadow-xl">
-              <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/[0.06]">
+              <div className="mb-6 pb-3 border-b border-white/[0.06]">
                 <h2 className="text-lg font-semibold text-white">The essentials</h2>
-                <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider">Core Identity</span>
               </div>
 
               <Field label="Brand name">
@@ -1524,7 +1543,6 @@ function BrandSettings() {
               </div>
               <div className="flex items-center justify-between mt-8 mb-6 pb-3 border-b border-white/[0.06]">
                 <h2 className="guidelines-heading text-lg font-semibold text-white">The creative guardrails</h2>
-                <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">AI Enforced</span>
               </div>
 
               <Field label="Brand guidelines">
@@ -1545,24 +1563,7 @@ function BrandSettings() {
             </form>
 
             <aside className="brand-explainer bg-[#121217] border border-white/[0.08] p-6 rounded-2xl self-start shadow-xl">
-              <div className="mb-6 p-4 rounded-xl bg-[#181820] border border-white/[0.06]">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider">Calibration</span>
-                  <span className="text-xs font-mono font-semibold text-emerald-400">99.4% Active</span>
-                </div>
-                <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-emerald-400 h-1.5 rounded-full w-[99.4%]" />
-                </div>
-                <div className="flex items-center gap-1.5 mt-3 text-[10px] font-mono text-zinc-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Zero Voiceprint Drift Active
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles size={18} className="text-orange-400" />
-                <span className="text-xs font-mono text-orange-400 uppercase tracking-wider">VOICE ENGINE</span>
-              </div>
+              <Sparkles size={22} className="text-orange-400 mb-3" />
               <h2 className="text-xl font-bold text-white mb-2 leading-tight">One voice.<br />Every project.</h2>
               <p className="text-xs text-zinc-400 mb-6 leading-relaxed">Your saved brand kit is included in every AI chat and remix request across your account.</p>
               <div className="space-y-3">

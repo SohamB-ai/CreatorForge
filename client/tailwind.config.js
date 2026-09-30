@@ -4,34 +4,43 @@ export default {
   theme: {
     extend: {
       colors: {
+        mahogany: '#1C1714',
+        'aged-oak': '#251E19',
+        parchment: '#E8DFD4',
+        'worn-leather': '#3D332B',
+        'faded-ink': '#9C8B7A',
+        'wood-grain': '#4A3F35',
+        brass: {
+          light: '#D4B872',
+          DEFAULT: '#C9A962',
+          dark: '#B8953F',
+        },
+        crimson: {
+          DEFAULT: '#8B2635',
+          dark: '#681B27',
+        },
         brand: {
-          50: '#fff7ed',
-          100: '#ffedd5',
-          200: '#fed7aa',
-          300: '#fdba74',
-          400: '#fb923c',
-          500: '#ff5e1e', // Molten Orange
-          600: '#ea580c',
-          700: '#c2410c',
-          800: '#9a3412',
-          900: '#7c2d12',
-          950: '#431407',
-        },
-        obsidian: {
-          base: '#09090b',
-          surface: '#121217',
-          card: '#181820',
-          popover: '#23232e',
-        },
-        kinetic: {
-          orange: '#ff5e1e',
-          indigo: '#8b5cf6',
-          amber: '#ff9900',
+          50: '#FAF6F0',
+          100: '#F4ECE0',
+          200: '#E8DFD4',
+          300: '#D4B872',
+          400: '#C9A962',
+          500: '#C9A962',
+          600: '#B8953F',
+          700: '#8B2635',
+          800: '#4A3F35',
+          900: '#251E19',
+          950: '#1C1714',
         },
       },
       fontFamily: {
-        sans: ['Geist', 'Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        heading: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+        body: ['"Crimson Pro"', 'Georgia', 'serif'],
+        display: ['Cinzel', 'Trajan Pro', 'serif'],
+        serif: ['"Crimson Pro"', 'Georgia', 'serif'],
+      },
+      borderRadius: {
+        arch: '40% 40% 0 0 / 20% 20% 0 0',
       },
       animation: {
         'border-beam': 'border-beam calc(var(--duration)*1s) infinite linear',

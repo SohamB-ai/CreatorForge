@@ -4,22 +4,22 @@ export function ShimmerButton({
   children,
   to,
   className = '',
-  shimmerColor = '#ffffff',
-  shimmerDuration = '3s',
-  borderRadius = '8px',
-  background = 'rgba(255, 94, 30, 1)',
+  shimmerColor = '#FDF6E2',
+  shimmerDuration = '3.5s',
+  borderRadius = '4px',
+  background = 'linear-gradient(180deg, #D4B872 0%, #C9A962 50%, #B8953F 100%)',
   onClick,
   disabled,
   type = 'button',
   ...props
 }) {
   const content = (
-    <span className="relative z-10 flex items-center justify-center gap-2">
+    <span className="relative z-10 flex items-center justify-center gap-2 font-display text-xs uppercase tracking-[0.18em] font-semibold text-[#1C1714] drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)]">
       {children}
     </span>
   );
 
-  const sharedClasses = `shimmer-btn group relative z-0 inline-flex cursor-pointer items-center justify-center overflow-hidden whitespace-nowrap border border-white/10 px-5 py-2.5 font-medium text-white shadow-lg active:scale-[0.98] transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${className}`;
+  const sharedClasses = `shimmer-btn group relative z-0 inline-flex cursor-pointer items-center justify-center overflow-hidden whitespace-nowrap border border-white/20 px-6 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-1px_0_rgba(0,0,0,0.2),0_2px_8px_rgba(0,0,0,0.35)] hover:brightness-110 hover:shadow-[0_4px_16px_rgba(201,169,98,0.45)] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${className}`;
 
   if (to) {
     return (

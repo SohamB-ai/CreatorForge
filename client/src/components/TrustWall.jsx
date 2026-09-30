@@ -57,18 +57,18 @@ export function TrustWall() {
   ];
 
   return (
-    <section className="trust-wall-section border-y border-zinc-200/80 dark:border-zinc-800/60 py-10 my-12" aria-label="Trusted by modern creators">
+    <section className="trust-wall-section border-y border-[#4A3F35] bg-[#251E19]/40 py-12 my-14" aria-label="Patrons and Modern Studios">
       <div className="max-w-6xl mx-auto px-6">
-        <p className="text-center text-xs font-medium tracking-wider uppercase text-zinc-600 dark:text-zinc-400 mb-8">
-          Crafted for independent creators and modern product studios
+        <p className="text-center font-display text-[11px] font-semibold tracking-[0.28em] uppercase text-[#C9A962] mb-8">
+          Volume II · Patronage & Creative Guilds
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-10 md:gap-16 opacity-60 dark:opacity-50 hover:opacity-85 transition-opacity duration-300 text-zinc-900 dark:text-white">
+        <div className="flex flex-wrap items-center justify-center gap-10 md:gap-16 opacity-70 hover:opacity-100 transition-opacity duration-300 text-[#E8DFD4]">
           {logos.map((logo) => (
             <div
               key={logo.name}
               title={logo.name}
               aria-label={logo.name}
-              className="flex items-center justify-center grayscale hover:grayscale-0 transition-all duration-200"
+              className="flex items-center justify-center text-[#9C8B7A] hover:text-[#C9A962] hover:scale-105 transition-all duration-300"
             >
               {logo.svg}
             </div>
