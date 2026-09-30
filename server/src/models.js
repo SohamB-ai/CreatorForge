@@ -24,7 +24,7 @@ export const Project = mongoose.model('Project', new Schema({
   name: { type: String, required: true },
   description: { type: String, default: '' },
   skillIds: { type: [String], default: [] },
-  storageBytes: { type: Number, min: 0 },
+  storageBytes: { type: Number, min: 0, default: 0 },
 }, options));
 export const Media = mongoose.model('Media', new Schema({
   userId: owner,
@@ -39,6 +39,7 @@ export const Media = mongoose.model('Media', new Schema({
   autoDescription: { type: String, default: '' },
   analysisStatus: { type: String, enum: ['pending', 'processing', 'ready', 'failed'] },
   analysisSummary: { type: String, default: '' },
+  analysisHasTranscript: { type: Boolean, default: false },
   analysisTranscript: { type: String, select: false },
   analysisAttempts: { type: Number, default: 0 },
   analysisLeaseUntil: { type: Date },

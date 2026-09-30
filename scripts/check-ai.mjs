@@ -12,10 +12,11 @@ if (!apiKey?.trim() || !/^gemini-[a-zA-Z0-9.-]+$/.test(model || '')) {
   process.exitCode = 1;
 } else {
   try {
+    const started = Date.now();
     const client = new GoogleGenAI({ apiKey });
     const result = await client.models.generateContent({ model, contents: 'Reply with OK.', config: { maxOutputTokens: 128, httpOptions: { timeout: 30000, retryOptions: { attempts: 1 } } } });
     if (!result.text?.trim()) throw new Error('No provider text returned.');
-    console.log(`PASS: Live generation succeeded using ${model}.`);
+    console.log(`PASS: Live generation succeeded using ${model} in ${Date.now() - started} ms.`);
     console.log('The application flag was not changed. Enable AI_GENERATION_ENABLED and restart only when ready.');
   } catch (failure) {
     const safe = providerFailure(failure);

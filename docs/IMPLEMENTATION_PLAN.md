@@ -1,3 +1,5 @@
+> Historical planning document. For the implemented routes, limits, configured Gemini model, and deployment contract, see [LIVE_BACKEND.md](LIVE_BACKEND.md).
+
 # CreatorForge Implementation Plan
 
 This is a comprehensive, step-by-step implementation plan for CreatorForge, optimized for a 4-hour hackathon constraint. This document contains complete, copy-pasteable code blocks to ensure rapid development.

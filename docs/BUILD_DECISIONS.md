@@ -30,7 +30,9 @@ The original seven planning documents remain unchanged. They define the product 
 - Restrict API CORS to the configured frontend origin, rate-limit authentication and AI generation, and sanitize provider errors.
 - Retain the planning documents' localStorage JWT approach for this MVP. A production hardening pass should consider httpOnly-cookie sessions, CSP on the deployed frontend, distributed rate limiting, atomic cascade deletion, and storage/context quotas under concurrent requests.
 
-## Canonical API
+> Current API, limits, persistence, and deployment contract: [LIVE_BACKEND.md](LIVE_BACKEND.md). The older checkpoint and API table below record earlier implementation stages where they differ.
+
+## Canonical API at the earlier checkpoint
 Successful responses are plain JSON, without a generic `data` wrapper. Errors are `{ "error": "Human-readable message" }`.
 
 | Method | Path | Response |
@@ -57,7 +59,7 @@ Successful responses are plain JSON, without a generic `data` wrapper. Errors ar
 
 Upload accepts one multipart field named `file` per request. Chat accepts `projectId` and `message`. Remix accepts `projectId`, `mediaId`, `format`, and optional `instructions`.
 
-Chat response saving accepts an empty JSON object only, checks project/message ownership and model role, and copies the exact original UTF-8 bytes into a Markdown asset within the existing editing/storage limits. A unique sparse `sourceMessageId` index makes duplicate saves idempotent. Re-saving returns the existing asset without overwriting edits; deleting the asset permits saving again. The chat message itself is unchanged. These assets use the existing editor and saved Markdown/text export routes. Concurrent quota reservations across different assets remain a production-hardening follow-up.
+Chat response saving accepts an empty JSON object only, checks project/message ownership and model role, and copies the exact original UTF-8 bytes into a Markdown asset within the existing editing/storage limits. A unique sparse `sourceMessageId` index makes duplicate saves idempotent. Re-saving returns the existing asset without overwriting edits; deleting the asset permits saving again. The chat message itself is unchanged. These assets use the existing editor and saved export routes. Concurrent quota reservations now use the MongoDB transaction and project counter described in [LIVE_BACKEND.md](LIVE_BACKEND.md).
 
 The browser streams chat over authenticated POST/fetch rather than EventSource, preserving bearer sessions and the existing completed-JSON endpoint. Incremental Markdown is an unsaved draft until a matching `done` response confirms persisted message IDs/content. Stop and workspace navigation abort the request and provider SDK signal; failures/cancellation roll back this request's inserted history. A per-project lock prevents simultaneous chat/remix generation, with timeouts and a 60,000-byte response bound. Injected-provider API/browser tests do not establish real provider latency or cancellation billing guarantees.
 

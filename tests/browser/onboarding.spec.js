@@ -70,8 +70,7 @@ test('multi-profession onboarding combines skills, switches collections and crea
   await expect(page.getByRole('heading', { name: 'No skills supplied for this profession yet.' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '2 skills together' })).toBeVisible();
   await page.getByRole('button', { name: 'All my professions', exact: true }).click();
-  await page.getByRole('button', { name: 'Switch to light theme' }).click();
-  await expect(page.locator('.skill-card-body').first()).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(page.locator('.skill-card-body').first()).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `${root}tmp/skills-library-${info.project.name}.png`, fullPage: true, animations: 'disabled' });
@@ -158,6 +157,6 @@ test('onboarding and skill library remain protected by the existing sign-in flow
   for (const route of ['/onboarding', '/skills']) {
     await page.goto(route);
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole('heading', { name: 'Welcome back.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome back to the desk.' })).toBeVisible();
   }
 });

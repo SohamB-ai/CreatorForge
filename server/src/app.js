@@ -17,6 +17,8 @@ import { installChatStream } from './chat-stream.js';
 import { installOnboarding, skillIdsSchema, validateProjectSkills } from './onboarding.js';
 import { resolveProjectSkill } from './project-skills.js';
 import { ensureStorage, withProjectMutation } from './project-mutations.js';
+import { createMediaAnalysisWorker, installMediaAnalysisRoutes } from './media-analysis.js';
+import { installBrandImportRoutes } from './brand-import.js';
 
 export const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const string = (maximum) => z.string().trim().max(maximum);
@@ -66,6 +68,7 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
   if (!jwtSecret || jwtSecret.length < 32 || jwtSecret.startsWith('replace_with')) throw new Error('JWT_SECRET must contain at least 32 characters and must not be the example placeholder.');
   const app = express();
   const generate = createGenerator({ geminiApiKey, geminiModel, aiEnabled, generateContent, generateContentStream });
+  app.locals.analysisWorker = createMediaAnalysisWorker(generate);
   app.disable('x-powered-by');
   app.use(helmet());
   app.use(cors({
@@ -193,6 +196,7 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
       return result;
     });
     response.status(201).json(result);
+    app.locals.analysisWorker?.kick().catch(() => {});
   }));
   app.get('/api/projects/:id/media/:mediaId/content', asyncRoute(async (request, response) => {
     const asset = await ownedMedia(request);
@@ -204,7 +208,9 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
   app.delete('/api/projects/:id/media/:mediaId', asyncRoute(async (request, response) => {
     const asset = await ownedMedia(request);
     await withProjectMutation(asset.projectId, request.user._id, async () => {
-      await ensureStorage(asset.projectId, 0, asset.size);
+      const current = await Media.findOne({ _id: asset._id, projectId: asset.projectId, userId: request.user._id });
+      if (!current) fail(404, 'Media not found.');
+      await ensureStorage(asset.projectId, 0, current.size);
       await MediaRevision.deleteMany({ mediaId: asset._id });
       await Media.deleteOne({ _id: asset._id, projectId: asset.projectId, userId: request.user._id });
     });
@@ -215,12 +221,16 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
     response.json(await Message.find({ projectId: found._id }).sort({ createdAt: 1, _id: 1 }));
   }));
   app.get('/api/brand-kit', asyncRoute(async (request, response) => {
-    response.json(await BrandKit.findOne({ userId: request.user._id }) || brandSchema.parse({}));
+    const brand = await BrandKit.findOne({ userId: request.user._id });
+    const logo = await BrandLogo.findOne({ userId: request.user._id }).select('-data');
+    response.json({ ...(brand?.toObject() || brandSchema.parse({})), logo: logo ? { name: logo.name, mimeType: logo.mimeType, size: logo.size, updatedAt: logo.updatedAt } : null });
   }));
   app.put('/api/brand-kit', asyncRoute(async (request, response) => {
     response.json(await BrandKit.findOneAndUpdate({ userId: request.user._id }, { $set: brandSchema.parse(request.body) }, { new: true, upsert: true, runValidators: true }));
   }));
   const aiLimiter = rateLimit({ windowMs: 60000, limit: process.env.RATE_LIMIT_AI ? Number(process.env.RATE_LIMIT_AI) : 10, keyGenerator: (request) => request.user._id.toString(), standardHeaders: 'draft-8', legacyHeaders: false, message: { error: 'You have reached the generation limit. Try again in a minute.' } });
+  installMediaAnalysisRoutes(app, { asyncRoute, ownedMedia, aiLimiter });
+  installBrandImportRoutes(app, { asyncRoute, ownedProject, aiLimiter, generate });
   const inFlight = new Set();
   const withProjectLock = async (projectId, operation) => {
     const key = projectId.toString();
@@ -267,6 +277,7 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
       const content = await generate({ project: found, media: [source], history: [], brand, prompt: `Transform this source into a ${values.format}. ${values.instructions}` });
       return withProjectMutation(found._id, request.user._id, async () => {
         const size = Buffer.byteLength(content);
+        if (size > 60000) fail(413, 'Generated content exceeds the 60 KB editing limit.');
         await ensureStorage(found._id, size);
         const asset = await Media.create({ projectId: found._id, userId: request.user._id, name: `${values.format} — ${source.name}`.slice(0, 200), type: 'text', mimeType: 'text/markdown', size, data: Buffer.from(content).toString('base64') });
         return { content, mediaId: asset._id };

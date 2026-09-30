@@ -19,9 +19,9 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
-        sync: false
+        value: gemini-2.5-flash
       - key: AI_GENERATION_ENABLED
-        value: "false"
+        value: "true"
       - key: CLIENT_URL
         sync: false
       - key: FIREBASE_PROJECT_ID

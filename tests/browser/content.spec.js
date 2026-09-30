@@ -98,3 +98,29 @@ test('Studio drafts retain selected sources and notes after reload', async ({ pa
   await request.delete(`/api/projects/${fixture.project._id}`, { headers: fixture.headers });
 });
 
+test('saved text exports PDF, restores a prior version, and shows source analysis state', async ({ page, request }, info) => {
+  const fixture = await prepare(page, request, `backend-${info.project.name}`);
+  expect(fixture.asset.analysisStatus).toBe('pending');
+  await expect(page.getByText('Analysis: pending')).toBeVisible();
+  await page.getByRole('button', { name: /draft.md TEXT/ }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Edit content' }).click();
+  await dialog.getByLabel('Edit saved content').fill('# Revised heading\n\n- One item');
+  await dialog.getByRole('button', { name: 'Save changes' }).click();
+  await expect(dialog.getByText('Saved to project', { exact: true })).toBeVisible();
+  await dialog.getByLabel('Export format').selectOption('pdf');
+  const pending = page.waitForEvent('download');
+  await dialog.getByRole('button', { name: 'Download saved content' }).click();
+  const download = await pending;
+  expect(download.suggestedFilename()).toBe('draft.pdf');
+  const chunks = [];
+  for await (const chunk of await download.createReadStream()) chunks.push(chunk);
+  expect(Buffer.concat(chunks).subarray(0, 4).toString()).toBe('%PDF');
+  page.once('dialog', confirmation => confirmation.accept());
+  await dialog.getByLabel('Previous versions').selectOption({ index: 1 });
+  await expect(dialog.getByLabel('Edit saved content')).toHaveValue('# Original draft\nReady to revise.');
+  await dialog.getByRole('button', { name: 'Preview content' }).click();
+  await expect(dialog.getByRole('heading', { name: 'Original draft' })).toBeVisible();
+  await request.delete(`/api/projects/${fixture.project._id}`, { headers: fixture.headers });
+});
+

@@ -1,3 +1,5 @@
+> Historical planning document. For the implemented routes, limits, configured Gemini model, and deployment contract, see [LIVE_BACKEND.md](LIVE_BACKEND.md).
+
 # CreatorForge: Backend Schema & Architecture
 
 ## 1. Database Overview

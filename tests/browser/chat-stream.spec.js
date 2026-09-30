@@ -53,7 +53,7 @@ test('live draft appears before completion and only finished replies can be save
   await page.getByRole('button', { name: 'Send message' }).click();
   await expect(page.getByRole('heading', { name: 'Live draft' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Stop generation' })).toBeVisible();
-  await expect(page.getByText('Draft · not saved yet')).toBeVisible();
+  await expect(page.getByText('Draft in progress…')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Save response to library', exact: true })).toHaveCount(0);
   expect(await Message.countDocuments({ projectId: project._id })).toBe(0);
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

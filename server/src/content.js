@@ -55,9 +55,9 @@ export function installContentRoutes(app, { ownedMedia, ownedProject }) {
     if (asset.studioRunId) fail(409, 'Edit this structured asset in the Studio.');
     const values = z.object({ content: z.string().min(1, 'Content cannot be empty.').max(MAX_EDIT_BYTES).refine((content) => Buffer.byteLength(content, 'utf8') <= MAX_EDIT_BYTES, 'Content exceeds the 60 KB editing limit.').refine((content) => !content.includes('\0'), 'Text cannot contain null bytes.'), version: z.number().int().nonnegative() }).strict().parse(request.body);
     const size = Buffer.byteLength(values.content, 'utf8');
+    await ensureStorage(asset.projectId, size, asset.size);
     const updated = await Media.findOneAndUpdate({ _id: asset._id, projectId: asset.projectId, userId: request.user._id, __v: values.version }, { $set: { data: Buffer.from(values.content, 'utf8').toString('base64'), size }, $inc: { __v: 1 } }, { new: true, runValidators: true });
     if (!updated) fail(409, 'This asset changed in another session. Reload the saved version before trying again; your draft is still available.');
-    await ensureStorage(asset.projectId, size, asset.size);
     await MediaRevision.create({ userId: request.user._id, projectId: asset.projectId, mediaId: asset._id, version: values.version, name: asset.name, mimeType: asset.mimeType, size: asset.size, data: asset.data });
     const stale = await MediaRevision.find({ mediaId: asset._id }).sort({ version: -1 }).skip(20).select('_id').lean();
     if (stale.length) await MediaRevision.deleteMany({ _id: { $in: stale.map(row => row._id) } });

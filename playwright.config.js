@@ -6,7 +6,7 @@ export default defineConfig({
   workers: 1,
   expect: { timeout: 15000 },
   use: {
-    baseURL: process.env.E2E_BASE_URL || 'http://127.0.0.1:5173',
+    baseURL: process.env.E2E_BASE_URL || (process.env.E2E_START_SERVER === 'true' ? 'http://127.0.0.1:5273' : 'http://127.0.0.1:5173'),
     browserName: 'chromium',
     headless: true,
     trace: 'retain-on-failure',

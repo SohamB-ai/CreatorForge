@@ -861,6 +861,7 @@ function Workspace() {
   const health = useHealth();
   const [project, setProject] = useState(null);
   const [media, setMedia] = useState([]);
+  const [analysisDetails, setAnalysisDetails] = useState({});
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -952,6 +953,22 @@ function Workspace() {
     }
     setUploading(false);
     if (fileInput.current) fileInput.current.value = '';
+  }
+
+  async function showAnalysis(asset) {
+    try {
+      const { data } = await api.get(`/projects/${id}/media/${asset._id}/analysis`);
+      setAnalysisDetails((details) => ({ ...details, [asset._id]: data }));
+      setMedia((assets) => assets.map((item) => item._id === asset._id ? { ...item, analysisStatus: data.status, analysisSummary: data.summary } : item));
+    } catch (failure) { notify(errorText(failure), 'error'); }
+  }
+
+  async function retryAnalysis(asset) {
+    try {
+      const { data } = await api.post(`/projects/${id}/media/${asset._id}/analyze`, {});
+      setMedia((assets) => assets.map((item) => item._id === asset._id ? { ...item, analysisStatus: data.status } : item));
+      notify('Analysis queued. Your upload remains available.');
+    } catch (failure) { notify(errorText(failure), 'error'); }
   }
 
   async function send(event, prompt) {
@@ -1114,6 +1131,12 @@ function Workspace() {
                       <small>{asset.type.toUpperCase()} · {sizeLabel(asset.size)}</small>
                     </span>
                   </button>
+                  {asset.analysisStatus && <div className="px-2 pb-2 text-xs font-editorial-new">
+                    <span role="status">Analysis: {asset.analysisStatus}</span>{' '}
+                    <button className="underline" onClick={() => showAnalysis(asset)}>View details</button>{' '}
+                    {asset.analysisStatus === 'failed' && <button className="underline" onClick={() => retryAnalysis(asset)}>Retry</button>}
+                    {analysisDetails[asset._id] && <div><p>{analysisDetails[asset._id].summary || 'No summary yet.'}</p>{analysisDetails[asset._id].transcript && <details><summary>Transcript</summary><pre className="whitespace-pre-wrap">{analysisDetails[asset._id].transcript}</pre></details>}</div>}
+                  </div>}
                   <button
                     className="icon-button asset-delete"
                     aria-label={`Remove ${asset.name}`}
@@ -1359,6 +1382,13 @@ function BrandSettings() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [colorInput, setColorInput] = useState('');
+  const [projects, setProjects] = useState([]);
+  const [importProject, setImportProject] = useState('');
+  const [pdfSources, setPdfSources] = useState([]);
+  const [importMedia, setImportMedia] = useState('');
+  const [draftSource, setDraftSource] = useState('');
+  const [formRevision, setFormRevision] = useState(0);
+  const [logoUrl, setLogoUrl] = useState('');
 
   useEffect(() => {
     api.get('/brand-kit')
@@ -1370,6 +1400,47 @@ function BrandSettings() {
       .catch((failure) => setError(errorText(failure)))
       .finally(() => setLoading(false));
   }, []);
+  useEffect(() => { api.get('/projects').then(({ data }) => setProjects(data)).catch(() => {}); }, []);
+  useEffect(() => {
+    if (!importProject) { setPdfSources([]); setImportMedia(''); return; }
+    api.get(`/projects/${importProject}/media`).then(({ data }) => { setPdfSources(data.filter((asset) => asset.mimeType === 'application/pdf')); setImportMedia(''); }).catch(() => setPdfSources([]));
+  }, [importProject]);
+  useEffect(() => {
+    if (!brand.logo) { setLogoUrl(''); return undefined; }
+    let active = true;
+    let url;
+    api.get('/brand-kit/logo', { responseType: 'blob' }).then(({ data }) => {
+      if (!active) return;
+      url = URL.createObjectURL(data);
+      setLogoUrl(url);
+    }).catch(() => {});
+    return () => { active = false; if (url) URL.revokeObjectURL(url); };
+  }, [brand.logo?.updatedAt]);
+
+  async function importBrand() {
+    if (!importProject || !importMedia) return;
+    setBusy(true); setError('');
+    try {
+      const { data } = await api.post('/brand-kit/import', { projectId: importProject, mediaId: importMedia });
+      setBrand((current) => ({ ...current, ...data.draft }));
+      setColorInput(data.draft.colors.join(', '));
+      setDraftSource(data.sourceMediaId);
+      setFormRevision((value) => value + 1);
+      notify('Brand draft ready. Review its fields, then save the manual.');
+    } catch (failure) { setError(errorText(failure)); }
+    finally { setBusy(false); }
+  }
+
+  async function uploadLogo(file) {
+    if (!file) return;
+    setBusy(true); setError('');
+    try {
+      const body = new FormData(); body.append('file', file);
+      const { data } = await api.put('/brand-kit/logo', body);
+      setBrand((current) => ({ ...current, logo: data }));
+    } catch (failure) { setError(errorText(failure)); }
+    finally { setBusy(false); }
+  }
 
   async function save(event) {
     event.preventDefault();
@@ -1382,7 +1453,8 @@ function BrandSettings() {
         keywords: form.keywords.split(',').map((item) => item.trim()).filter(Boolean),
         colors: form.colors.split(',').map((item) => item.trim()).filter(Boolean),
       });
-      setBrand(data);
+      setBrand((current) => ({ ...current, ...data }));
+      setDraftSource('');
       notify('Brand manual saved. Guardrails will guide every generation.');
     } catch (failure) {
       setError(errorText(failure));
@@ -1415,10 +1487,11 @@ function BrandSettings() {
           <Spinner />
         ) : (
           <div className="brand-layout grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
-            <form onSubmit={save} className="brand-form bg-[var(--color-bone-cream)] border border-[var(--color-ink-black)] p-6 md:p-8 rounded-[11.52px] shadow-[var(--shadow-sm)]">
+            <form key={formRevision} onSubmit={save} className="brand-form bg-[var(--color-bone-cream)] border border-[var(--color-ink-black)] p-6 md:p-8 rounded-[11.52px] shadow-[var(--shadow-sm)]">
               <div className="mb-5 pb-2.5 border-b border-[var(--color-ink-black)]">
                 <h2 className="text-lg font-canopee font-normal text-[var(--color-ink-black)]">The Essentials</h2>
               </div>
+              {draftSource && <p role="status" className="mb-4 text-sm">Reviewing a draft from PDF source {draftSource}. Nothing has been saved yet.</p>}
 
               <Field label="Publication / Brand name">
                 <input
@@ -1489,6 +1562,20 @@ function BrandSettings() {
             </form>
 
             <aside className="brand-explainer bg-[var(--color-bone-cream)] border border-[var(--color-ink-black)] p-6 rounded-[11.52px] self-start shadow-[var(--shadow-sm)]">
+              <div className="space-y-3 mb-6">
+                <h2 className="text-xl font-canopee">Import a brand PDF</h2>
+                <p className="text-xs">Choose a PDF already uploaded to one of your projects. Review the extracted fields before saving.</p>
+                <select aria-label="Project for brand PDF" value={importProject} onChange={(event) => setImportProject(event.target.value)} disabled={busy}><option value="">Choose project</option>{projects.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}</select>
+                <select aria-label="Brand PDF source" value={importMedia} onChange={(event) => setImportMedia(event.target.value)} disabled={busy || !importProject}><option value="">Choose PDF</option>{pdfSources.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}</select>
+                <button type="button" className="button secondary small" disabled={busy || !importMedia} onClick={importBrand}>Extract draft</button>
+              </div>
+              <div className="space-y-3 mb-6">
+                <h2 className="text-xl font-canopee">Account logo</h2>
+                <p className="text-xs">{brand.logo ? `${brand.logo.name} saved` : 'No logo saved'}</p>
+                {logoUrl && <img src={logoUrl} alt="Account logo" className="max-h-24 max-w-full object-contain" />}
+                <input aria-label="Upload account logo" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={(event) => uploadLogo(event.target.files?.[0])} />
+                {brand.logo && <button type="button" className="button secondary small" disabled={busy} onClick={async () => { try { await api.delete('/brand-kit/logo'); setBrand((current) => ({ ...current, logo: null })); } catch (failure) { setError(errorText(failure)); } }}>Remove logo</button>}
+              </div>
               <Sparkles size={20} className="text-[var(--color-ember-orange)] mb-3" />
               <h2 className="text-xl font-canopee font-normal text-[var(--color-ink-black)] mb-2 leading-[0.98]">
                 One standard.<br />Every dispatch.

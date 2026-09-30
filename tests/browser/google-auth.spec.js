@@ -20,7 +20,7 @@ test('configured Google button completes the existing app session flow with mock
   });
   await page.goto('/login');
   await page.getByRole('button', { name: 'Continue with Google' }).click();
-  await expect(page.getByRole('heading', { name: "Let's make something, Google." })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Editorial Desk · Google" })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('creatorforge.token'))).toBe(account.token);
 });
 test('Google email collision asks for password and preserves the same account', async ({ page, request }, info) => {
@@ -38,7 +38,7 @@ test('Google email collision asks for password and preserves the same account', 
   await page.screenshot({ path: `tmp/google-link-${info.project.name}.png`, fullPage: true });
   await page.getByLabel('Existing account password').fill('GoogleBrowser123!');
   await page.getByRole('button', { name: 'Connect Google securely' }).click();
-  await expect(page.getByRole('heading', { name: "Let's make something, Google." })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Editorial Desk · Google" })).toBeVisible();
 });
 test('Google SDK failure leaves email/password sign-in working', async ({ page, request }, info) => {
   const account = await prepare(page, request, `fallback-${info.project.name}`);
@@ -47,8 +47,8 @@ test('Google SDK failure leaves email/password sign-in working', async ({ page, 
   await expect(page.getByRole('alert')).toContainText('Google sign-in could not load');
   await page.getByLabel('Email address').fill(account.user.email);
   await page.getByLabel('Password', { exact: true }).fill('GoogleBrowser123!');
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await expect(page.getByRole('heading', { name: "Let's make something, Google." })).toBeVisible();
+  await page.getByRole('button', { name: 'Sign in to desk', exact: true }).click();
+  await expect(page.getByRole('heading', { name: "Editorial Desk · Google" })).toBeVisible();
 });
 test('Firebase popup cancellation permits retry without creating an app session', async ({ page, request }, info) => {
   const account = await prepare(page, request, `cancel-${info.project.name}`);
@@ -60,8 +60,8 @@ test('Firebase popup cancellation permits retry without creating an app session'
   await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeEnabled();
   await page.getByLabel('Email address').fill(account.user.email);
   await page.getByLabel('Password', { exact: true }).fill('GoogleBrowser123!');
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await expect(page.getByRole('heading', { name: "Let's make something, Google." })).toBeVisible();
+  await page.getByRole('button', { name: 'Sign in to desk', exact: true }).click();
+  await expect(page.getByRole('heading', { name: "Editorial Desk · Google" })).toBeVisible();
 });
 
 
@@ -73,7 +73,7 @@ test('blocked popup can be retried successfully', async ({ page, request }, info
   await page.getByRole('button', { name: 'Continue with Google' }).click();
   await expect(page.getByRole('alert')).toContainText('blocked');
   await page.getByRole('button', { name: 'Continue with Google' }).click();
-  await expect(page.getByRole('heading', { name: "Let's make something, Google." })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Editorial Desk · Google" })).toBeVisible();
 });
 
 test('expired linking identity is cleared and can restart', async ({ page, request }, info) => {
