@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: creatorforge-api
+    runtime: node
+    buildCommand: npm ci --omit=dev --workspace @creatorforge/server
+    startCommand: npm run start --workspace @creatorforge/server
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: CLIENT_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false

@@ -1,0 +1,151 @@
+import { after, before, test } from 'node:test';
+import assert from 'node:assert/strict';
+import mongoose from 'mongoose';
+import { fileURLToPath } from 'node:url';
+import { createApp } from '../server/src/app.js';
+import { GoogleChallenge, User } from '../server/src/models.js';
+
+const root = fileURLToPath(new URL('../', import.meta.url));
+process.env.MONGOMS_DOWNLOAD_DIR = `${root}tmp/mongodb-binaries`;
+const { MongoMemoryServer } = await import('mongodb-memory-server');
+const googleClientId = '123456789-testclient.apps.googleusercontent.com';
+const jwtSecret = 'google-test-only-secret-at-least-thirty-two-characters';
+let database;
+let base;
+const servers = [];
+async function start(options) {
+  const server = createApp({ jwtSecret, ...options }).listen(0, '127.0.0.1');
+  await new Promise((resolve) => server.once('listening', resolve));
+  servers.push(server);
+  return `http://127.0.0.1:${server.address().port}/api`;
+}
+before(async () => {
+  database = await MongoMemoryServer.create();
+  await mongoose.connect(database.getUri(), { dbName: 'creatorforge-google-test' });
+  await User.init();
+  await GoogleChallenge.init();
+  base = await start({ googleClientId, verifyGoogleCredential: async (credential) => {
+    if (credential === 'invalid-signature') throw new Error('private verification diagnostics');
+    return JSON.parse(credential);
+  } });
+});
+after(async () => {
+  await Promise.all(servers.map((server) => new Promise((resolve) => server.close(resolve))));
+  await mongoose.disconnect();
+  if (database) await database.stop();
+});
+async function request(path, { method = 'GET', body, cookie, headers = {}, token, endpoint = base } = {}) {
+  const response = await fetch(`${endpoint}${path}`, { method, headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(cookie ? { Cookie: cookie } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined });
+  return { status: response.status, data: await response.json(), headers: response.headers };
+}
+async function challenge() {
+  const result = await request('/auth/google/challenge', { method: 'POST', body: {}, headers: { 'X-CreatorForge-Google': '1', Origin: 'http://127.0.0.1:5173' } });
+  assert.equal(result.status, 200);
+  return { nonce: result.data.nonce, cookie: result.headers.get('set-cookie').split(';')[0], setCookie: result.headers.get('set-cookie') };
+}
+function claims(nonce, overrides = {}) {
+  return { iss: 'https://accounts.google.com', aud: googleClientId, exp: Math.floor(Date.now() / 1000) + 3600, email_verified: true, email: 'google@example.com', sub: 'google-subject-1', name: 'Google Creator', nonce, ...overrides };
+}
+async function googleLogin(session, overrides = {}, password) {
+  return request('/auth/google', { method: 'POST', cookie: session.cookie, headers: { 'X-CreatorForge-Google': '1' }, body: { credential: JSON.stringify(claims(session.nonce, overrides)), ...(password ? { password } : {}) } });
+}
+
+test('Google sign-in security and account compatibility', async (context) => {
+  let googleUser;
+  let localUser;
+  let localProject;
+  let consumedSession;
+  await context.test('Google remains disabled until a real-format client ID is configured', async () => {
+    const endpoint = await start({});
+    assert.deepEqual((await request('/auth/google/config', { endpoint })).data, { configured: false, clientId: null });
+    assert.equal((await request('/auth/google', { endpoint, method: 'POST', body: { credential: 'fake' }, headers: { 'X-CreatorForge-Google': '1' } })).status, 503);
+    assert.equal((await request('/auth/google/config')).data.clientId, googleClientId);
+  });
+  await context.test('sign-in initiation checks request marker and allowed origin', async () => {
+    assert.equal((await request('/auth/google/challenge', { method: 'POST', body: {} })).status, 403);
+    assert.equal((await request('/auth/google/challenge', { method: 'POST', body: {}, headers: { 'X-CreatorForge-Google': '1', Origin: 'https://attacker.example' } })).status, 403);
+    const session = await challenge();
+    assert.match(session.setCookie, /HttpOnly/);
+    assert.match(session.setCookie, /SameSite=Lax/);
+    assert.match(session.setCookie, /Path=\/api\/auth\/google/);
+    assert.equal((await request('/auth/google', { method: 'POST', cookie: session.cookie, body: { credential: 'anything' } })).status, 403);
+    assert.equal((await request('/auth/google', { method: 'POST', cookie: session.cookie, body: { credential: 'anything' }, headers: { 'X-CreatorForge-Google': '1', Origin: 'https://attacker.example' } })).status, 403);
+  });
+  await context.test('signed browser challenge is required', async () => {
+    assert.equal((await request('/auth/google', { method: 'POST', body: { credential: 'anything' }, headers: { 'X-CreatorForge-Google': '1' } })).status, 401);
+    assert.equal((await request('/auth/google', { method: 'POST', body: { credential: 'anything' }, cookie: 'creatorforge_google_challenge=forged', headers: { 'X-CreatorForge-Google': '1' } })).status, 401);
+  });
+  await context.test('reject wrong issuer, audience, expiry, nonce, unverified email and malformed claims', async () => {
+    const session = await challenge();
+    for (const override of [
+      { iss: 'https://attacker.example' }, { aud: 'other-client' }, { exp: 1 }, { nonce: 'wrong' },
+      { email_verified: false }, { email: 'not-an-email' }, { sub: '' },
+    ]) assert.equal((await googleLogin(session, override)).status, 401);
+    assert.equal(await User.countDocuments({}), 0);
+  });
+  await context.test('provider verification failure is sanitized', async () => {
+    const session = await challenge();
+    const result = await request('/auth/google', { method: 'POST', cookie: session.cookie, headers: { 'X-CreatorForge-Google': '1' }, body: { credential: 'invalid-signature' } });
+    assert.equal(result.status, 401);
+    assert.doesNotMatch(result.data.error, /private verification/);
+  });
+  await context.test('new Google identity receives the normal protected app session', async () => {
+    consumedSession = await challenge();
+    const result = await googleLogin(consumedSession);
+    assert.equal(result.status, 200);
+    googleUser = result.data;
+    assert.ok(googleUser.token);
+    assert.equal(googleUser.user.password, undefined);
+    assert.equal(googleUser.user.googleSub, undefined);
+    assert.equal((await User.findById(googleUser.user._id).select('+password')).password, undefined);
+    assert.equal((await request('/auth/me', { token: googleUser.token })).data._id, googleUser.user._id);
+    assert.equal((await request('/projects', { token: googleUser.token })).status, 200);
+    assert.match(result.headers.get('set-cookie'), /Expires=Thu, 01 Jan 1970/);
+  });
+  await context.test('consumed challenge cannot replay a Google credential', async () => {
+    assert.equal((await googleLogin(consumedSession)).status, 401);
+  });
+  await context.test('stable Google subject logs into the same account even if Google email changes', async () => {
+    const result = await googleLogin(await challenge(), { email: 'new-email@example.com' });
+    assert.equal(result.status, 200);
+    assert.equal(result.data.user._id, googleUser.user._id);
+    assert.equal(result.data.user.email, 'google@example.com');
+    assert.equal(await User.countDocuments({}), 1);
+    assert.equal((await request('/auth/login', { method: 'POST', body: { email: 'google@example.com', password: 'any-password' } })).status, 401);
+  });
+  await context.test('email/password collision requires explicit password confirmation', async () => {
+    localUser = (await request('/auth/register', { method: 'POST', body: { name: 'Local Creator', email: 'local@example.com', password: 'LocalPass123!' } })).data;
+    localProject = (await request('/projects', { method: 'POST', token: localUser.token, body: { name: 'Existing project' } })).data;
+    const session = await challenge();
+    const identity = { email: 'local@example.com', sub: 'google-local-link' };
+    const blocked = await googleLogin(session, identity);
+    assert.equal(blocked.status, 409);
+    assert.equal(blocked.data.code, 'ACCOUNT_LINK_REQUIRED');
+    assert.equal((await User.findById(localUser.user._id).select('+googleSub')).googleSub, undefined);
+    assert.equal((await googleLogin(session, identity, 'WrongPassword')).status, 401);
+    assert.equal((await User.findById(localUser.user._id).select('+googleSub')).googleSub, undefined);
+    const connected = await googleLogin(session, identity, 'LocalPass123!');
+    assert.equal(connected.status, 200);
+    assert.equal(connected.data.user._id, localUser.user._id);
+    assert.equal((await request(`/projects/${localProject._id}`, { token: connected.data.token })).status, 200);
+    assert.equal((await request('/auth/login', { method: 'POST', body: { email: 'local@example.com', password: 'LocalPass123!' } })).status, 200);
+  });
+  await context.test('a different Google subject cannot claim an already-linked email', async () => {
+    const result = await googleLogin(await challenge(), { email: 'local@example.com', sub: 'different-google-user' }, 'LocalPass123!');
+    assert.equal(result.status, 409);
+    assert.equal((await User.findById(localUser.user._id).select('+googleSub')).googleSub, 'google-local-link');
+  });
+  await context.test('expired stored challenge is rejected even before cookie expiry', async () => {
+    const session = await challenge();
+    await GoogleChallenge.updateMany({}, { $set: { expiresAt: new Date(0) } });
+    assert.equal((await googleLogin(session)).status, 401);
+  });
+  await context.test('HTTPS deployments receive secure challenge cookies', async () => {
+    const endpoint = await start({ googleClientId, clientUrl: 'https://app.example.com' });
+    const result = await request('/auth/google/challenge', { endpoint, method: 'POST', body: {}, headers: { 'X-CreatorForge-Google': '1', Origin: 'https://app.example.com' } });
+    assert.equal(result.status, 200);
+    assert.match(result.headers.get('set-cookie'), /Secure/);
+    assert.match(result.headers.get('set-cookie'), /SameSite=None/);
+    assert.match(result.headers.get('set-cookie'), /HttpOnly/);
+  });
+});

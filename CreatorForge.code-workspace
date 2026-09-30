@@ -1,0 +1,4 @@
+{
+  "folders": [{ "path": "." }],
+  "settings": { "files.exclude": { "**/node_modules": true, "**/tmp": true }, "search.exclude": { "**/node_modules": true, "**/tmp": true, "**/package-lock.json": true } }
+}

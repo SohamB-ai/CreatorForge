@@ -27,7 +27,7 @@ CreatorForge — one workspace where AI sees everything, connects the dots, and 
 | Frontend | React.js + Vite + Tailwind CSS |
 | Backend | Express.js + JWT + bcrypt + Multer |
 | Database | MongoDB (Mongoose) |
-| AI | Google Gemini 2.0 Flash API |
+| AI | Google Gemini API (`@google/genai`, configurable model) |
 | Deployment | Vercel (frontend) + Render (backend) |
 
 ## 📂 Documentation
@@ -46,40 +46,57 @@ All project documentation is in the [`docs/`](./docs/) folder:
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Node.js v18+
-- MongoDB Atlas account
-- Google Gemini API key
+### Local development
+Use Node.js 20.19+ or 22.12+ and run these commands at the repository root:
 
-### Frontend
 ```bash
-cd client
 npm install
 npm run dev
 ```
 
-### Backend
+The frontend runs at `http://127.0.0.1:5173` and the API at `http://127.0.0.1:5001`.
+The first run downloads a local MongoDB binary into `tmp/mongodb-binaries`.
+Real local MongoDB data persists in `tmp/mongodb-data`, and a development JWT secret is generated automatically into a gitignored, permission-restricted file.
+No cloud account is needed to use registration, projects, media uploads, or brand settings locally.
+There are no seeded projects or simulated AI responses.
+
+To enable live AI, create `server/.env` and add your key locally:
+
+```env
+GEMINI_API_KEY=your_key_here
+GEMINI_MODEL=gemini-3.8-flash
+```
+
+Restart the app after changing backend environment variables.
+Missing AI configuration produces a clear message rather than invented output.
+An existing detached development session can be stopped with `kill "$(cat tmp/dev.pid)"` from the project root.
+
+### Google sign-in
+Google sign-in is integrated alongside email/password login and registration, but remains disabled until `GOOGLE_CLIENT_ID` is set on the backend. Use a Google OAuth Web application client ID, not an API key. No client secret is required for this sign-in-only flow.
+
+See [Google Sign-In Setup](./docs/GOOGLE_AUTH_SETUP.md) for authorized origins, local configuration, account linking, production cookie/proxy considerations, and testing. Existing accounts require password confirmation before Google can be linked; projects and password access are preserved.
+
+For MongoDB Atlas or production, also set `MONGODB_URI`, a random `JWT_SECRET` of at least 32 characters, and `CLIENT_URL`.
+Copy the examples in `server/.env.example` and `client/.env.example` only when needed; replace placeholders and never commit secrets.
+
+### Verification
 ```bash
-cd server
-npm install
-npm run dev
+npm test
+npm run build
+npm audit
+PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/playwright" npx playwright install chromium
+PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/playwright" npm run test:e2e
 ```
 
-### Environment Variables
+Browser tests require `npm run dev` to be running separately. API tests use a separate isolated MongoDB instance.
+AI payload tests inject a test-only provider; they do not prove live Gemini access. Google authentication tests inject verified-claim fixtures or mock Google browser services; live Google sign-in still requires actual OAuth configuration.
 
-**server/.env**
-```env
-PORT=5000
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
-GEMINI_API_KEY=your_gemini_api_key
-CLIENT_URL=http://localhost:5173
-```
+### Deployment configuration
+- Vercel: root directory `client`, build `npm run build`, output `dist`; set `VITE_API_URL` to the Render API URL ending in `/api`. SPA rewrites are in `client/vercel.json`.
+- Render: `render.yaml` describes the API service; supply MongoDB Atlas URI, Gemini API key, and the exact deployed frontend origin. Bind `HOST=0.0.0.0` and use Render's assigned `PORT`.
+- Cloud services have not been created or deployed. Local development MongoDB is not a production database.
 
-**client/.env**
-```env
-VITE_API_URL=http://localhost:5000/api
-```
+See [BUILD_STATUS.md](./BUILD_STATUS.md) for completed work, remaining requirements, and verification, and [docs/BUILD_DECISIONS.md](./docs/BUILD_DECISIONS.md) for resolutions of conflicting planning examples.
 
 ## 👥 Team
 
