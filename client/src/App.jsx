@@ -631,86 +631,22 @@ function Dashboard() {
 
   return (
     <Shell>
-      <main className="dashboard">
-        <div className="page-title">
+      <main className="dashboard max-w-6xl mx-auto py-8 px-4 sm:px-6">
+        <div className="page-title flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
-            <div className="eyebrow">
-              <span className="status-dot" />
-              OBSIDIAN PROJECTS HUB · V2.4
-            </div>
-            <h1>Let's make something, {auth.user.name.split(' ')[0]}.</h1>
-            <p>Every great piece of content starts with a place for your ideas.</p>
+            <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Let's make something, {auth.user.name.split(' ')[0]}.</h1>
+            <p className="text-zinc-400 text-sm">Every great piece of content starts with a place for your ideas.</p>
           </div>
-          <button className="button primary" onClick={() => setDialog({ type: 'create' })}>
+          <button className="button primary shrink-0" onClick={() => setDialog({ type: 'create' })}>
             <Plus size={18} />New project
           </button>
         </div>
 
-        {/* Top Telemetry Stats Banner from Stitch MCP */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 my-8" aria-label="Workspace telemetry">
-          <div className="p-4 rounded-xl bg-[#121217] border border-white/[0.08] shadow-sm">
-            <span className="text-xs font-mono text-zinc-400 block mb-1 uppercase tracking-wider">Active Projects</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-mono font-bold text-white">{projects.length}</span>
-              <span className="text-xs font-mono text-zinc-500">/ 16 Slots</span>
-            </div>
-            <div className="w-full bg-white/5 rounded-full h-1 mt-3 overflow-hidden">
-              <div className="bg-orange-500 h-1 rounded-full" style={{ width: `${Math.min(100, Math.max(10, projects.length * 15))}%` }} />
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-[#121217] border border-white/[0.08] shadow-sm">
-            <span className="text-xs font-mono text-zinc-400 block mb-1 uppercase tracking-wider">Tokens Consumed</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-mono font-bold text-orange-400">1.42M</span>
-              <span className="text-xs font-mono text-zinc-500">/ 5.0M</span>
-            </div>
-            <div className="w-full bg-white/5 rounded-full h-1 mt-3 overflow-hidden">
-              <div className="bg-orange-500 h-1 rounded-full w-[28%]" />
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-[#121217] border border-white/[0.08] shadow-sm">
-            <span className="text-xs font-mono text-zinc-400 block mb-1 uppercase tracking-wider">Vault Storage</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-mono font-bold text-white">4.2 GB</span>
-              <span className="text-xs font-mono text-zinc-500">NVMe SSD</span>
-            </div>
-            <div className="w-full bg-white/5 rounded-full h-1 mt-3 overflow-hidden">
-              <div className="bg-emerald-400 h-1 rounded-full w-[17%]" />
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-[#121217] border border-white/[0.08] shadow-sm">
-            <span className="text-xs font-mono text-zinc-400 block mb-1 uppercase tracking-wider">Voiceprint Retention</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-mono font-bold text-emerald-400">99.2%</span>
-              <span className="text-xs font-mono text-zinc-500">Consistency</span>
-            </div>
-            <div className="w-full bg-white/5 rounded-full h-1 mt-3 overflow-hidden">
-              <div className="bg-emerald-400 h-1 rounded-full w-[99%]" />
-            </div>
-          </div>
-        </section>
-
-        {/* Section Toolbar & Category Pills */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div className="flex flex-wrap items-center gap-2">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setCategory(cat)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  category === cat
-                    ? 'bg-orange-500/15 border border-orange-500/30 text-orange-400 font-mono shadow-sm'
-                    : 'bg-[#181820] border border-white/[0.06] text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                {cat} {cat === 'All Projects' && <span className="opacity-60 ml-1">({projects.length})</span>}
-              </button>
-            ))}
-          </div>
+        {/* Section Toolbar */}
+        <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-white/[0.06]">
+          <span className="text-xs text-zinc-400 font-medium">
+            {projects.length} {projects.length === 1 ? 'project' : 'projects'}
+          </span>
 
           <label className="search min-w-[240px]">
             <Search size={17} />
@@ -718,7 +654,7 @@ function Dashboard() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               aria-label="Search projects"
-              placeholder="Search projects… (⌘K)"
+              placeholder="Search projects…"
             />
           </label>
         </div>
@@ -750,26 +686,20 @@ function Dashboard() {
           </div>
         ) : visible.length ? (
           <div className="project-grid">
-            {visible.map((project, idx) => (
-              <article className="project-card border border-white/[0.08] bg-[#121217] rounded-xl hover:border-orange-500/40 transition-all group" key={project._id}>
+            {visible.map((project) => (
+              <article className="project-card border border-white/[0.08] bg-[#121217] rounded-xl hover:border-zinc-700 transition-all group" key={project._id}>
                 <Link to={`/project/${project._id}`} className="project-main p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="project-symbol bg-orange-500/10 border border-orange-500/20 text-orange-400 group-hover:scale-105 transition-transform">
-                      <Folder size={22} strokeWidth={1.4} />
-                    </div>
-                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      LIVE SYNCED
-                    </span>
+                  <div className="project-symbol bg-white/5 border border-white/10 text-orange-400 rounded-lg p-2.5 inline-flex mb-3 group-hover:scale-105 transition-transform">
+                    <Folder size={20} strokeWidth={1.5} />
                   </div>
                   <h3 className="text-lg font-semibold text-white group-hover:text-orange-400 transition-colors">{project.name}</h3>
-                  <p className="text-zinc-400 text-sm line-clamp-2 my-2">{project.description || 'Your next creative direction starts here.'}</p>
-                  <div className="project-stats text-xs font-mono text-zinc-400 pt-2 border-t border-white/[0.04]">
-                    <span><FileText size={13} className="text-orange-400" />{project.mediaCount || 0} assets</span>
-                    <span><MessageSquare size={13} className="text-purple-400" />{project.messageCount || 0} messages</span>
+                  <p className="text-zinc-400 text-sm line-clamp-2 my-2">{project.description || 'Your project workspace.'}</p>
+                  <div className="project-stats text-xs text-zinc-400 pt-2 border-t border-white/[0.04]">
+                    <span><FileText size={13} className="text-orange-400" />{project.mediaCount || 0} {project.mediaCount === 1 ? 'source' : 'sources'}</span>
+                    <span><MessageSquare size={13} className="text-zinc-500" />{project.messageCount || 0} {project.messageCount === 1 ? 'message' : 'messages'}</span>
                   </div>
                 </Link>
-                <div className="project-footer px-5 py-3 border-t border-white/[0.06] bg-[#181820]/60 flex items-center justify-between text-xs text-zinc-400">
+                <div className="project-footer px-5 py-3 border-t border-white/[0.06] bg-[#15151c] flex items-center justify-between text-xs text-zinc-400">
                   <span className="font-mono">Updated {new Date(project.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                   <div className="flex items-center gap-1">
                     <button
