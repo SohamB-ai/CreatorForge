@@ -35,6 +35,7 @@ export function installGoogleAuth(app, { jwtSecret, firebaseConfig, firebaseGoog
     response.json({ configured, firebase: configured ? { apiKey: firebaseConfig.apiKey, authDomain: firebaseConfig.authDomain, projectId: firebaseConfig.projectId, appId: firebaseConfig.appId } : null });
   });
   app.post('/api/auth/google/challenge', authLimiter, route(async (request, response) => {
+    response.set('Cache-Control', 'no-store');
     ensureRequest(request);
     const nonce = randomBytes(32).toString('base64url');
     await GoogleChallenge.create({ nonceHash: hash(nonce), expiresAt: new Date(Date.now() + challengeLifetime) });
@@ -44,6 +45,7 @@ export function installGoogleAuth(app, { jwtSecret, firebaseConfig, firebaseGoog
     response.json({ nonce });
   }));
   app.post('/api/auth/google', authLimiter, route(async (request, response) => {
+    response.set('Cache-Control', 'no-store');
     ensureRequest(request);
     const values = z.object({ idToken: z.string().min(1).max(10000), nonce: z.string().min(1).max(200), password: z.string().min(1).max(200).refine((value) => Buffer.byteLength(value, 'utf8') <= 72, 'Password must fit within 72 UTF-8 bytes.').optional() }).parse(request.body);
     const cookie = request.headers.cookie?.split(';').map((item) => item.trim()).find((item) => item.startsWith(`${cookieName}=`))?.slice(cookieName.length + 1);
@@ -53,12 +55,12 @@ export function installGoogleAuth(app, { jwtSecret, firebaseConfig, firebaseGoog
     let payload;
     try { payload = await verify(values.idToken); } catch { reject(401, 'Google could not verify this sign-in. Please try again.'); }
     const googleIdentities = payload?.firebase?.identities?.['google.com'];
-    const googleSub = Array.isArray(googleIdentities) ? googleIdentities[0] : undefined;
+    const googleSub = Array.isArray(googleIdentities) && googleIdentities.length === 1 ? googleIdentities[0] : undefined;
     const now = Date.now() / 1000;
     if (!payload || payload.iss !== `https://securetoken.google.com/${firebaseConfig.projectId}`
       || payload.aud !== firebaseConfig.projectId || !Number.isFinite(payload.exp) || payload.exp <= now
       || !Number.isFinite(payload.auth_time) || payload.auth_time < now - 300 || payload.auth_time > now + 60
-      || payload.firebase?.sign_in_provider !== 'google.com' || payload.firebase?.tenant
+      || payload.firebase?.sign_in_provider !== 'google.com' || payload.firebase?.tenant != null
       || payload.email_verified !== true || typeof payload.sub !== 'string' || !payload.sub || payload.sub.length > 128
       || typeof googleSub !== 'string' || !googleSub || googleSub.length > 255
       || !z.string().email().max(254).safeParse(payload.email).success) reject(401, 'Google sign-in could not be verified. Start again with a verified Google account.');

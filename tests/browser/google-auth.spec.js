@@ -63,3 +63,30 @@ test('Firebase popup cancellation permits retry without creating an app session'
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('heading', { name: "Let's make something, Google." })).toBeVisible();
 });
+
+
+test('blocked popup can be retried successfully', async ({ page, request }, info) => {
+  const account = await prepare(page, request, `blocked-${info.project.name}`);
+  await page.route('**/src/firebase-google.js*', (route) => route.fulfill({ contentType: 'application/javascript', body: `let attempts = 0; export async function signInWithGoogle() { if (++attempts === 1) throw Object.assign(new Error('blocked'), { code: 'auth/popup-blocked' }); return 'retry-token'; }` }));
+  await page.route('**/api/auth/google', (route) => route.fulfill({ json: account }));
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Continue with Google' }).click();
+  await expect(page.getByRole('alert')).toContainText('blocked');
+  await page.getByRole('button', { name: 'Continue with Google' }).click();
+  await expect(page.getByRole('heading', { name: "Let's make something, Google." })).toBeVisible();
+});
+
+test('expired linking identity is cleared and can restart', async ({ page, request }, info) => {
+  await prepare(page, request, `expired-${info.project.name}`);
+  await page.route('**/api/auth/google', (route) => route.fulfill(route.request().postDataJSON().password
+    ? { status: 401, json: { error: 'Your Google sign-in session expired. Start Google sign-in again.' } }
+    : { status: 409, json: { code: 'ACCOUNT_LINK_REQUIRED' } }));
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Continue with Google' }).click();
+  await page.getByLabel('Existing account password').fill('GoogleBrowser123!');
+  await page.getByRole('button', { name: 'Connect Google securely' }).click();
+  await expect(page.getByRole('alert')).toContainText('expired');
+  await expect(page.getByLabel('Existing account password')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeEnabled();
+  expect(await page.evaluate(() => localStorage.getItem('creatorforge.token'))).toBeNull();
+});

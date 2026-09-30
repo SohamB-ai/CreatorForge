@@ -2,15 +2,16 @@
 
 Updated September 30, 2026. Firebase is used **only as Google's identity provider**. MongoDB, email/password login, CreatorForge JWT sessions, account IDs and project ownership stay unchanged. This supersedes the earlier direct Google Identity Services configuration; `GOOGLE_CLIENT_ID` is no longer used.
 
-## Created project and current status
+## Current project and local status
 
-- Firebase project: **CreatorForge**, ID `creatorforge-20260930-204983`, project number `901879982420`.
-- Web app: **CreatorForge Web**, app ID `1:901879982420:web:a44bc7050e255973e840c1`.
-- Console: https://console.firebase.google.com/project/creatorforge-20260930-204983/overview
-- Created using the existing authenticated Firebase CLI account, `yumyoo007@gmail.com`.
-- Registered the web app and saved its actual web configuration in the gitignored local `server/.env`. `.firebaserc` identifies this dedicated project.
-- **Live Google login is still disabled.** The Auth configuration read returned HTTP 404 `CONFIGURATION_NOT_FOUND`; Firebase Authentication has not yet been initialized. The console automation tools were unavailable, so provider activation and authorized-domain configuration were not completed.
-- No billing upgrade, paid Identity Platform initialization, Firestore/Realtime Database, Hosting deployment, service account, or private key was created. The publicly documented Identity Platform initialization endpoint requires a billing-enabled project; it was not called.
+- The user selected **MoneyX**, project ID `moneyx-80bdc`, project number `201570216778`, for CreatorForge authentication.
+- Registered **CreatorForge Web**, app ID `1:201570216778:web:e38d62e17f647555caefb3`.
+- Console: https://console.firebase.google.com/project/moneyx-80bdc/overview
+- Google provider is enabled. Authorized domains include `localhost`, `127.0.0.1`, `moneyx-80bdc.firebaseapp.com`, and `moneyx-80bdc.web.app`.
+- The actual public web configuration is stored in gitignored `server/.env`, with Google sign-in enabled. Database configuration and the persisted local JWT secret were preserved.
+- Chrome live login, session restoration after reload, and logout were verified. Automated account-linking tests use fixtures; live linking and Safari remain unverified.
+- The formerly documented `creatorforge-20260930-204983` project was inaccessible to the current account and is no longer this checkout's selected project.
+- No hosting deployment, billing upgrade, database migration, or service-account key was created.
 
 ## Finish Firebase console setup
 
@@ -27,10 +28,10 @@ The current local configuration already contains the real web SDK values. Deploy
 
 ```env
 CLIENT_URL=http://127.0.0.1:5173
-FIREBASE_PROJECT_ID=creatorforge-20260930-204983
+FIREBASE_PROJECT_ID=moneyx-80bdc
 FIREBASE_WEB_API_KEY=copy_from_this_projects_web_app_config
-FIREBASE_AUTH_DOMAIN=creatorforge-20260930-204983.firebaseapp.com
-FIREBASE_APP_ID=1:901879982420:web:a44bc7050e255973e840c1
+FIREBASE_AUTH_DOMAIN=moneyx-80bdc.firebaseapp.com
+FIREBASE_APP_ID=1:201570216778:web:e38d62e17f647555caefb3
 FIREBASE_GOOGLE_SIGN_IN_ENABLED=false
 ```
 

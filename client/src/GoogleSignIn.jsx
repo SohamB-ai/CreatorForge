@@ -15,78 +15,99 @@ function signInError(failure) {
   return 'Google sign-in could not load or complete. Check your connection and try again.';
 }
 
+const requestOptions = { withCredentials: true, headers: { 'X-CreatorForge-Google': '1' } };
+const popupErrors = {
+  'auth/popup-closed-by-user': 'Google sign-in was cancelled. You can try again.',
+  'auth/cancelled-popup-request': 'Google sign-in was cancelled. You can try again.',
+  'auth/popup-blocked': 'Your browser blocked the Google popup. Allow popups and try again.',
+  'auth/unauthorized-domain': 'Google sign-in is not enabled for this hostname yet.',
+  'auth/network-request-failed': 'Google sign-in could not connect. Check your connection and retry.',
+};
+
 export default function GoogleSignIn({ disabled = false, onSuccess, onBusyChange }) {
   const [status, setStatus] = useState('loading');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [identity, setIdentity] = useState(null);
   const [attempt, setAttempt] = useState(0);
-  const config = useRef(null);
-  const sdk = useRef(null);
-  const mounted = useRef(false);
+  const ready = useRef(null);
   const pending = useRef(false);
+  const mounted = useRef(false);
   const callbacks = useRef({ onSuccess, onBusyChange });
-  const passwordId = useId();
   callbacks.current = { onSuccess, onBusyChange };
+  const passwordId = useId();
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; callbacks.current.onBusyChange(false); }; }, []);
   useEffect(() => {
-    const abort = new AbortController();
     let active = true;
+    const abort = new AbortController();
+    ready.current = null;
     setStatus('loading'); setError(''); setIdentity(null);
     async function prepare() {
       try {
         const { data } = await api.get('/auth/google/config', { signal: abort.signal });
         if (!active) return;
         if (!data.configured) { setStatus('unconfigured'); return; }
-        const module = await import('./firebase-google.js');
+        const bridge = await import('./firebase-google.js');
+        const config = data.firebase;
         if (!active) return;
-        config.current = data.firebase; sdk.current = module;
+        ready.current = { bridge, config };
         setStatus('ready');
       } catch (failure) {
-        if (active) { setStatus('failed'); setError(signInError(failure)); }
+        if (active) { setStatus('failed'); setError(failure.response ? errorText(failure) : 'Google sign-in could not load. Check your connection and retry.'); }
       }
     }
     prepare();
     return () => { active = false; abort.abort(); };
   }, [attempt]);
-
-  async function exchange(proof, password) {
-    const { data } = await api.post('/auth/google', { ...proof, ...(password ? { password } : {}) }, { withCredentials: true, headers: googleHeaders });
-    if (mounted.current) { setIdentity(null); callbacks.current.onSuccess(data); }
+  function setWorking(value) {
+    pending.current = value;
+    if (mounted.current) { setBusy(value); callbacks.current.onBusyChange(value); }
   }
-  async function start(password) {
-    if (pending.current || disabled || status !== 'ready') return;
-    pending.current = true; setBusy(true); setError(''); callbacks.current.onBusyChange(true);
-    let proof = identity;
+  async function exchange(value, password) {
     try {
-      if (!proof) {
-        const tokenPromise = sdk.current.signInWithGoogle(config.current);
-        const challengePromise = api.post('/auth/google/challenge', {}, { withCredentials: true, headers: googleHeaders });
-        const [idToken, challenge] = await Promise.all([tokenPromise, challengePromise]);
-        proof = { idToken, nonce: challenge.data.nonce };
-      }
-      if (mounted.current) await exchange(proof, password);
+      const { data } = await api.post('/auth/google', { ...value, ...(password ? { password } : {}) }, requestOptions);
+      if (mounted.current) { setIdentity(null); callbacks.current.onSuccess(data); }
     } catch (failure) {
-      if (mounted.current) {
-        if (failure.response?.data?.code === 'ACCOUNT_LINK_REQUIRED') setIdentity(proof);
-        else setError(signInError(failure));
+      if (!mounted.current) return;
+      if (failure.response?.data?.code === 'ACCOUNT_LINK_REQUIRED') setIdentity(value);
+      else {
+        setError(errorText(failure));
+        if (!password || !failure.response?.data?.error?.includes('password is incorrect')) setIdentity(null);
       }
-    } finally {
-      pending.current = false;
-      if (mounted.current) { setBusy(false); callbacks.current.onBusyChange(false); }
     }
   }
+  async function start() {
+    if (pending.current || disabled || !ready.current) return;
+    setWorking(true); setError(''); setIdentity(null);
+    try {
+      // Invoke the popup directly in the click handler, before awaiting network requests.
+      const idToken = await ready.current.bridge.signInWithGoogle(ready.current.config);
+      if (!mounted.current) return;
+      const { data } = await api.post('/auth/google/challenge', {}, requestOptions);
+      if (mounted.current) await exchange({ idToken, nonce: data.nonce });
+    } catch (failure) {
+      if (mounted.current) setError(popupErrors[failure.code] || (failure.response ? errorText(failure) : 'Google sign-in could not complete. Please try again.'));
+    } finally { setWorking(false); }
+  }
+  async function link(event) {
+    event.preventDefault();
+    if (pending.current || disabled || !identity) return;
+    const password = new FormData(event.currentTarget).get('password');
+    event.currentTarget.reset();
+    setWorking(true); setError('');
+    try { await exchange(identity, password); } finally { setWorking(false); }
+  }
   return <section className="google-sign-in" aria-label="Google sign-in">
-    {!identity && <button type="button" className="button secondary full" disabled={status !== 'ready' || disabled || busy} onClick={() => start()}><GoogleMark />{status === 'loading' ? 'Preparing Google sign-in…' : 'Continue with Google'}</button>}
+    {!identity && <button type="button" className="button secondary full" disabled={status !== 'ready' || busy || disabled} onClick={start}><GoogleMark />{status === 'loading' ? 'Preparing Google sign-in...' : 'Continue with Google'}</button>}
     {status === 'unconfigured' && <p className="google-setup-note">Google sign-in will be available once Firebase Google sign-in is configured. Email/password works now.</p>}
-    {busy && <p className="google-progress" role="status"><LoaderCircle className="spin" size={15} />Verifying your Google account…</p>}
-    {identity && <form className="google-link-form" onSubmit={(event) => { event.preventDefault(); start(new FormData(event.currentTarget).get('password')); }}>
+    {busy && <p className="google-progress" role="status"><LoaderCircle className="spin" size={15} />Verifying your Google account...</p>}
+    {identity && <form className="google-link-form" onSubmit={link}>
       <p>This email already has a CreatorForge account. Confirm its password to connect Google and keep your existing projects.</p>
       <div className="field"><label htmlFor={passwordId}>Existing account password</label><input id={passwordId} name="password" type="password" autoComplete="current-password" required maxLength={200} disabled={busy || disabled} /></div>
       <button className="button secondary full" disabled={busy || disabled}>Connect Google securely</button>
     </form>}
     {error && <p className="inline-error" role="alert">{error}</p>}
-    {(status === 'failed' || error || identity) && <button className="google-retry" type="button" disabled={busy || disabled} onClick={() => setAttempt((value) => value + 1)}>{identity ? 'Cancel and restart Google sign-in' : 'Try Google sign-in again'}</button>}
+    {(status === 'failed' || error || identity) && <button className="google-retry" type="button" disabled={busy || disabled} onClick={() => { setIdentity(null); setAttempt((value) => value + 1); }}>{identity ? 'Cancel and restart Google sign-in' : 'Try Google sign-in again'}</button>}
     <div className="auth-divider"><span />or use email<span /></div>
   </section>;
 }

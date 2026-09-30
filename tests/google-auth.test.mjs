@@ -181,3 +181,22 @@ test('Google sign-in security and account compatibility', async (context) => {
     assert.match(result.headers.get('set-cookie'), /HttpOnly/);
   });
 });
+
+
+test('concurrent Google exchanges issue only one session per token or challenge', async () => {
+  const endpoint = await start({ firebaseConfig, firebaseGoogleEnabled: true, verifyFirebaseCredential: async (token) => JSON.parse(token) });
+  const initiate = async () => {
+    const issued = await request('/auth/google/challenge', { endpoint, method: 'POST', body: {}, headers: { 'X-CreatorForge-Google': '1' } });
+    return { nonce: issued.data.nonce, cookie: issued.headers.get('set-cookie').split(';')[0] };
+  };
+  const exchange = (session, token) => request('/auth/google', { endpoint, method: 'POST', cookie: session.cookie, headers: { 'X-CreatorForge-Google': '1' }, body: { idToken: token, nonce: session.nonce } });
+  const a = await initiate();
+  const b = await initiate();
+  const token = JSON.stringify(claims(a.nonce, { email: 'concurrent@example.com', googleSub: 'concurrent-sub', firebase: { sign_in_provider: 'google.com', identities: { 'google.com': ['concurrent-sub'] } } }));
+  assert.deepEqual((await Promise.all([exchange(a, token), exchange(b, token)])).map((r) => r.status).sort(), [200, 401]);
+  const c = await initiate();
+  const first = JSON.stringify(claims(c.nonce, { email: 'concurrent@example.com', firebase: { sign_in_provider: 'google.com', identities: { 'google.com': ['concurrent-sub'] } } }));
+  const second = JSON.stringify({ ...JSON.parse(first), testTokenId: 'another-token' });
+  assert.deepEqual((await Promise.all([exchange(c, first), exchange(c, second)])).map((r) => r.status).sort(), [200, 401]);
+  assert.equal(await User.countDocuments({ googleSub: 'concurrent-sub' }), 1);
+});

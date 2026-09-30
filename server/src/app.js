@@ -71,7 +71,7 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
     aiConfigured: generate.configured,
     aiConfiguration: generate.configuration,
   }));
-  const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 50, standardHeaders: 'draft-8', legacyHeaders: false, message: { error: 'Too many sign-in attempts. Try again in 15 minutes.' } });
+  const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: process.env.RATE_LIMIT_AUTH ? Number(process.env.RATE_LIMIT_AUTH) : 500, standardHeaders: 'draft-8', legacyHeaders: false, message: { error: 'Too many sign-in attempts. Try again in 15 minutes.' } });
   const tokenFor = (user) => jwt.sign({ id: user._id.toString() }, jwtSecret, { algorithm: 'HS256', expiresIn: '7d', issuer: 'creatorforge', audience: 'creatorforge-client' });
   installGoogleAuth(app, { jwtSecret, firebaseConfig, firebaseGoogleEnabled, verifyFirebaseCredential, clientUrl, authLimiter, tokenFor, safeUser });
   app.post('/api/auth/register', authLimiter, asyncRoute(async (request, response) => {
