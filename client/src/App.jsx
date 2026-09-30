@@ -192,7 +192,7 @@ export default function App() {
       localStorage.removeItem('creatorforge.token');
       setUser(null);
     },
-    light: true,
+    light: false,
     toggleTheme: () => {},
   };
 
@@ -360,27 +360,31 @@ function Landing() {
       </header>
 
       <main>
-        {/* Section I: Editorial Broadsheet Hero */}
+        {/* Section 1: Hero — Desired End Result Without the Core Fear */}
         <section ref={heroSectionRef} className="hero py-14 md:py-20 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div ref={heroCopyRef} className="hero-copy lg:col-span-6 will-change-transform">
-            <span className="font-editorial-new text-sm uppercase tracking-[-0.01em] text-[var(--color-ember-orange)] mb-3 block">
-              Dispatch 01 · The Editorial Desk
+            <span className="font-editorial-new text-xs uppercase tracking-wider text-[var(--color-ember-orange)] mb-3 block font-semibold">
+              The Multimodal Scriptorium
             </span>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-canopee font-normal tracking-[-0.04em] text-[var(--color-ink-black)] leading-[0.88] mb-5">
-              Many sources.<br />
-              One enduring<br />
-              <span className="text-[var(--color-ember-orange)] italic font-normal">broadsheet.</span>
+              Turn raw research into<br />
+              publication-ready writing.<br />
+              <span className="text-[var(--color-ember-orange)] italic font-normal">Without losing your voice.</span>
             </h1>
-            <p className="text-lg text-[var(--color-charcoal)] font-editorial-new leading-[1.35] max-w-lg mb-7">
-              Gather interview tapes, photographic proofs, research documents, and audio notes into one dedicated studio. Transform raw materials into publication-ready dispatches in your distinct voice.
+            <p className="text-lg text-[var(--color-charcoal)] font-editorial-new leading-[1.35] max-w-lg mb-6">
+              CreatorForge grounds your essays, scripts, and threads directly in your primary sources, voice notes, and house style.
             </p>
-            <div className="flex flex-wrap items-center gap-3.5">
+            <div className="flex flex-wrap items-center gap-3.5 mb-5">
               <ShimmerButton to={next} className="primary">
-                Start Composing <ArrowRight size={15} />
+                Start Writing Free <ArrowRight size={15} />
               </ShimmerButton>
               <Link to={auth.user ? '/dashboard' : '/login'} className="button secondary">
-                Open Project Desk
+                Access Archives
               </Link>
+            </div>
+            <div className="pt-2 text-xs font-editorial-new text-[var(--color-charcoal)] flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block"></span>
+              <span>Trusted by 4,200+ essayists, newsletter authors, and creative directors.</span>
             </div>
           </div>
 
@@ -393,7 +397,7 @@ function Landing() {
                 <span className="new-badge">PROOF 01</span>
               </div>
 
-              {/* Full-bleed illustration card with 0px radius */}
+              {/* Archival illustration plate */}
               <div className="overflow-hidden border border-[var(--color-ink-black)] bg-[var(--color-parchment)] mb-4 relative rounded-none">
                 <img
                   src="/assets/creative_studio_art.jpg"
@@ -409,7 +413,7 @@ function Landing() {
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div
                   onClick={() => setHeroVoicePlaying(!heroVoicePlaying)}
-                  className="p-3 rounded-[2.88px] bg-[var(--color-parchment)] border border-[var(--color-ink-black)] flex flex-col justify-between shadow-[var(--shadow-sm)] cursor-pointer hover:bg-[#dad5d0] transition-colors"
+                  className="p-3 rounded-[2.88px] bg-[var(--color-parchment)] border border-[var(--color-ink-black)] flex flex-col justify-between shadow-[var(--shadow-sm)] cursor-pointer hover:bg-[var(--color-elevated)] transition-colors"
                   title={heroVoicePlaying ? 'Pause voice recording' : 'Preview voice recording'}
                 >
                   <div className="flex items-center justify-between text-xs text-[var(--color-charcoal)] font-editorial-new">
@@ -457,7 +461,7 @@ function Landing() {
                       Raw research becomes published copy.
                     </strong>
                     <small className="text-xs text-[var(--color-charcoal)] font-editorial-new">
-                      Synthesized into high-impact dispatches, threads & scripts
+                      Synthesized into high-impact dispatches, threads and scripts
                     </small>
                   </div>
                 </div>
@@ -467,56 +471,53 @@ function Landing() {
           </div>
         </section>
 
-        {/* Display Banner Block — Signature Miranda Oversize Typography */}
-        <section className="display-banner my-10 rounded-[2.88px]">
-          <div className="display-banner-text">
-            CREATORFORGE STUDIO
-          </div>
-        </section>
+        {/* Section 2: Social Proof & Quantifiable Results Anchor */}
+        <TrustWall />
+        <ResultsSection />
 
         <OrnateDivider glyph="✶" />
 
-        <TrustWall />
+        {/* Section 3: Problem Statement — The Cost of the Problem */}
+        <ProblemSection />
 
         <OrnateDivider glyph="❧" />
 
+        {/* Section 4: Solution & Value — 6 Comprehensive Feature Pillars */}
         <BentoGrid />
 
         <OrnateDivider glyph="✤" />
 
-        {/* Section IV: The Call to Action */}
+        {/* Section 5: How It Works — 3 Frictionless Steps */}
+        <HowItWorksSection />
+
+        <OrnateDivider glyph="✶" />
+
+        {/* Section 6: Frequently Asked Questions */}
+        <FaqSection />
+
+        <OrnateDivider glyph="❧" />
+
+        {/* Section 7: Final Benefit-Driven CTA */}
         <section
           ref={proclamationRef}
           className="my-16 p-8 md:p-14 rounded-[11.52px] bg-[var(--color-bone-cream)] border border-[var(--color-ink-black)] text-center relative max-w-4xl mx-auto shadow-[var(--shadow-sm)] overflow-hidden will-change-transform"
         >
-          <span className="font-editorial-new text-sm uppercase tracking-[-0.01em] text-[var(--color-ember-orange)] mb-2.5 block">
-            Dispatch 04 · Ready to Compose
-          </span>
-          <h2 className="text-3xl md:text-5xl font-canopee font-normal tracking-[-0.035em] text-[var(--color-ink-black)] mb-3 leading-[0.95]">
-            Ready to publish your next piece?
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-canopee font-normal tracking-[-0.035em] text-[var(--color-ink-black)] mb-3 leading-[0.95]">
+            Stop letting brilliant ideas die in scattered notes.
           </h2>
           <p className="text-[var(--color-charcoal)] font-editorial-new text-lg max-w-xl mx-auto mb-8 leading-[1.35]">
-            Create your project desk, deposit your research and recorded notes, and compose with publication-grade editorial rigor.
+            Create your first project archive, deposit your research and voice dictations, and craft with unyielding conviction.
           </p>
           <div className="flex justify-center relative z-10">
             <ShimmerButton to={next} className="primary">
-              Start Composing <ArrowRight size={16} />
+              Start Writing Free <ArrowRight size={16} />
             </ShimmerButton>
           </div>
         </section>
       </main>
 
-      <footer className="landing-footer flex flex-col sm:flex-row items-center justify-between py-8 border-t border-[var(--color-ink-black)] text-xs font-editorial-new text-[var(--color-charcoal)] gap-4">
-        <div className="flex items-center gap-3">
-          <Logo />
-          <span className="uppercase tracking-[-0.01em] text-[var(--color-charcoal)]">
-            A vintage broadsheet and multimodal studio.
-          </span>
-        </div>
-        <div className="uppercase tracking-[-0.01em] text-[var(--color-charcoal)]">
-          © 2026 CreatorForge · All rights reserved.
-        </div>
-      </footer>
+      {/* Structured Broadsheet Footer */}
+      <Footer />
     </div>
   );
 }
