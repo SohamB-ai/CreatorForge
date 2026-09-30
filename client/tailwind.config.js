@@ -5,18 +5,33 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#f5f3ff',
-          100: '#ede9fe',
-          200: '#ddd6fe',
-          300: '#c4b5fd',
-          400: '#a78bfa',
-          500: '#8b5cf6',
-          600: '#7c3aed',
-          700: '#6d28d9',
-          800: '#5b21b6',
-          900: '#4c1d95',
-          950: '#2e1065',
+          50: '#fff7ed',
+          100: '#ffedd5',
+          200: '#fed7aa',
+          300: '#fdba74',
+          400: '#fb923c',
+          500: '#ff5e1e', // Molten Orange
+          600: '#ea580c',
+          700: '#c2410c',
+          800: '#9a3412',
+          900: '#7c2d12',
+          950: '#431407',
         },
+        obsidian: {
+          base: '#09090b',
+          surface: '#121217',
+          card: '#181820',
+          popover: '#23232e',
+        },
+        kinetic: {
+          orange: '#ff5e1e',
+          indigo: '#8b5cf6',
+          amber: '#ff9900',
+        },
+      },
+      fontFamily: {
+        sans: ['Geist', 'Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       animation: {
         'border-beam': 'border-beam calc(var(--duration)*1s) infinite linear',

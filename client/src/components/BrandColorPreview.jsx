@@ -14,13 +14,13 @@ export function BrandColorPreview({ colors = '' }) {
       {hexList.map((hex, i) => (
         <span
           key={`${hex}-${i}`}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 shadow-sm"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono border border-white/[0.08] bg-[#181820] text-zinc-300 shadow-sm"
         >
           <span
-            className="w-3.5 h-3.5 rounded-full border border-black/10 dark:border-white/20 shadow-inner"
+            className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-inner"
             style={{ backgroundColor: hex }}
           />
-          <span className="text-zinc-700 dark:text-zinc-300">{hex}</span>
+          <span className="text-zinc-300">{hex}</span>
         </span>
       ))}
     </div>
