@@ -18,7 +18,7 @@ The requested Desktop folder is `/Users/rehan/Desktop/CreatorForge`. Its `Projec
 |---|---|
 | Setup | npm workspaces, React/Vite/Tailwind client, Express server, one-command development runner |
 | Authentication | Registration, sign-in, bcrypt hashing, JWT sessions, protected routes, session-expiry handling |
-| Google authentication | Google sign-in UI, verified ID-token backend, browser-bound single-use challenges, password-confirmed linking; disabled pending OAuth client configuration |
+| Google authentication | Firebase Google-only identity bridge, existing JWT/password/MongoDB unchanged, replay-safe challenges and password-confirmed linking; dedicated cloud project/web app created, live login disabled pending Auth/provider/domains |
 | Projects | Create, list, search, open, edit, and delete; per-account isolation |
 | Media | Drag/drop and browse uploads; image, audio, video, PDF and UTF-8 text types; file previews and removal; Base64 MongoDB storage |
 | Brand kit | Persistent account-level brand name, voice, audience, keywords, colors and writing guidelines |
@@ -52,7 +52,7 @@ The requested Desktop folder is `/Users/rehan/Desktop/CreatorForge`. Its `Projec
 - Google tests use an injected verifier or mocked Google browser services. They validate the application flow and security checks, **not live Google OAuth access**.
 
 ## Google authentication setup
-Google authentication was requested and integrated on September 30, 2026. Email/password remains available, and existing accounts must confirm their password before Google can be linked. Set a real OAuth Web application `GOOGLE_CLIENT_ID` and an exact matching `CLIENT_URL` on the backend to enable the official Google button; the default configuration remains disabled. See `docs/GOOGLE_AUTH_SETUP.md` for local authorized origins, setup, and hosted cookie/proxy considerations.
+The user's latest September 30, 2026 scope is Firebase **only for Google sign-in**, with no auth/database migration. Created dedicated Firebase project `creatorforge-20260930-204983` and CreatorForge Web app; actual web SDK configuration is saved in gitignored `server/.env`. Firebase Auth configuration still returns `CONFIGURATION_NOT_FOUND`, and console automation is unavailable, so live login remains explicitly disabled. Finish Authentication → Get started, enable Google and authorize the local/production domains before setting the enabled flag and testing a real account. Email/password and existing MongoDB/JWT sessions remain available. See `docs/GOOGLE_AUTH_SETUP.md` for details; the previous `GOOGLE_CLIENT_ID` setup is superseded.
 
 ## Remaining work
 
@@ -63,7 +63,7 @@ Google authentication was requested and integrated on September 30, 2026. Email/
 5. Expand accessibility checks and coverage for simultaneous mutations, retry behavior, total quotas and provider failures across media formats.
 6. Harden production operation: atomic cascade deletion, distributed limits, durable hosting, secure frontend policy and production session/storage review.
 7. Provision MongoDB Atlas, configure deployment credentials, and deploy to Vercel and Render with real origins and environment values.
-8. Supply the Google OAuth Web client ID, authorize the real frontend origin, and verify live Google sign-in and account linking in Safari and Chrome.
+8. Initialize Firebase Authentication in the new project, enable Google, authorize actual domains and verify live Google sign-in/account linking in Safari and Chrome before enabling publicly.
 
 ## Execution note
 

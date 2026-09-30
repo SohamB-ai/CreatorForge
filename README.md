@@ -72,7 +72,7 @@ Missing AI configuration produces a clear message rather than invented output.
 An existing detached development session can be stopped with `kill "$(cat tmp/dev.pid)"` from the project root.
 
 ### Google sign-in
-Google sign-in is integrated alongside email/password login and registration, but remains disabled until `GOOGLE_CLIENT_ID` is set on the backend. Use a Google OAuth Web application client ID, not an API key. No client secret is required for this sign-in-only flow.
+Google sign-in uses Firebase **only as the Google identity provider**. MongoDB, email/password login and CreatorForge JWT sessions remain unchanged. The dedicated Firebase project `creatorforge-20260930-204983` and web app are created; their web configuration is saved locally. Live login remains disabled until Firebase Authentication is initialized, Google is enabled, authorized domains are verified, and `FIREBASE_GOOGLE_SIGN_IN_ENABLED=true` is set. The old `GOOGLE_CLIENT_ID` setting is superseded.
 
 See [Google Sign-In Setup](./docs/GOOGLE_AUTH_SETUP.md) for authorized origins, local configuration, account linking, production cookie/proxy considerations, and testing. Existing accounts require password confirmation before Google can be linked; projects and password access are preserved.
 
@@ -89,7 +89,7 @@ PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/playwright" npm run test:e2e
 ```
 
 Browser tests require `npm run dev` to be running separately. API tests use a separate isolated MongoDB instance.
-AI payload tests inject a test-only provider; they do not prove live Gemini access. Google authentication tests inject verified-claim fixtures or mock Google browser services; live Google sign-in still requires actual OAuth configuration.
+AI payload tests inject a test-only provider; they do not prove live Gemini access. Google authentication tests inject Firebase claim fixtures or mock the Firebase browser module; live Google sign-in still requires Firebase provider/domain configuration and a real-account test.
 
 ### Deployment configuration
 - Vercel: root directory `client`, build `npm run build`, output `dist`; set `VITE_API_URL` to the Render API URL ending in `/api`. SPA rewrites are in `client/vercel.json`.

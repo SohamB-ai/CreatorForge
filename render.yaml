@@ -17,8 +17,18 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
-        value: gemini-3.8-flash
+        sync: false
+      - key: AI_GENERATION_ENABLED
+        value: "false"
       - key: CLIENT_URL
         sync: false
-      - key: GOOGLE_CLIENT_ID
+      - key: FIREBASE_PROJECT_ID
         sync: false
+      - key: FIREBASE_WEB_API_KEY
+        sync: false
+      - key: FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: FIREBASE_APP_ID
+        sync: false
+      - key: FIREBASE_GOOGLE_SIGN_IN_ENABLED
+        value: "false"

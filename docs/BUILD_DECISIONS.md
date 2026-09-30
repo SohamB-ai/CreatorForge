@@ -38,7 +38,7 @@ Successful responses are plain JSON, without a generic `data` wrapper. Errors ar
 | GET | `/api/health` | Database status and `aiConfigured` |
 | POST | `/api/auth/register`, `/api/auth/login` | `{ token, user }` |
 | GET | `/api/auth/me` | Safe current user |
-| GET | `/api/auth/google/config` | Google sign-in configuration status and public client ID |
+| GET | `/api/auth/google/config` | Google sign-in status and public Firebase web configuration |
 | POST | `/api/auth/google/challenge` | Browser-bound nonce challenge |
 | POST | `/api/auth/google` | Google sign-in or password-confirmed linking; `{ token, user }` |
 | GET / POST | `/api/projects` | Project list / created project |
@@ -54,7 +54,9 @@ Successful responses are plain JSON, without a generic `data` wrapper. Errors ar
 Upload accepts one multipart field named `file` per request. Chat accepts `projectId` and `message`. Remix accepts `projectId`, `mediaId`, `format`, and optional `instructions`.
 
 ## Google authentication addition
-The user requested Google authentication on September 30, 2026. Google Identity Services supplies the browser button and ID token; the backend uses `google-auth-library` to verify it. Google users are identified by stable subject, not auto-linked by email. Matching email/password accounts must confirm their password before linking. Signed httpOnly cookie challenges, stored hashed nonces, expiry and single-use consumption protect the sign-in exchange. `GOOGLE_CLIENT_ID` remains unset; see `GOOGLE_AUTH_SETUP.md` for real setup.
+The user's latest September 30, 2026 decision supersedes direct Google Identity Services: use a new dedicated Firebase project **only for Google sign-in**, not as a replacement auth/database stack. Created `creatorforge-20260930-204983` and registered its web app; saved public web configuration locally, with live login disabled pending Firebase Auth/Google provider/domain initialization. Firebase popup auth is memory-only and signs out after token extraction. Firebase Admin verifies the token using project ID and public certificates; additional checks restrict it to fresh, verified Google identities. Account mapping retains the existing stable Google subject, MongoDB IDs, password-confirmed linking and CreatorForge JWT sessions. Hashed single-use browser challenges and token receipts protect replay. No service account or billing upgrade is needed for this bridge. See `GOOGLE_AUTH_SETUP.md` for exact status and setup.
+
+Firebase Admin's optional Cloud Storage dependency introduced an audited vulnerable `uuid` under `gaxios`; a narrowly scoped npm override upgrades that transitive package to the patched 11.x range. No storage feature is enabled.
 
 ## Execution constraints
 The user requested task-specific agents. Three independent workers were attempted for backend, frontend, and tests, but all failed before doing work with HTTP 426 `app_update_required`. The main builder completed these tasks locally. HeyClicky must be updated before parallel worker attempts can succeed.

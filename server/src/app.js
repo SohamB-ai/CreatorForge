@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { User, Project, Media, Message, BrandKit } from './models.js';
 import { createGenerator } from './ai.js';
 import { installGoogleAuth } from './google-auth.js';
+import { installContentRoutes } from './content.js';
 
 export const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const string = (maximum) => z.string().trim().max(maximum);
@@ -55,21 +56,21 @@ function validateFile(file) {
   } else if (!matches[mime]) fail(415, 'The file contents do not match the declared file type.');
 }
 
-export function createApp({ jwtSecret, geminiApiKey, geminiModel, generateContent, googleClientId, verifyGoogleCredential, clientUrl = 'http://127.0.0.1:5173' } = {}) {
+export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = false, generateContent, firebaseConfig, firebaseGoogleEnabled = false, verifyFirebaseCredential, clientUrl = 'http://127.0.0.1:5173' } = {}) {
   if (!jwtSecret || jwtSecret.length < 32 || jwtSecret.startsWith('replace_with')) throw new Error('JWT_SECRET must contain at least 32 characters and must not be the example placeholder.');
   const app = express();
-  const generate = createGenerator({ geminiApiKey, geminiModel, generateContent });
+  const generate = createGenerator({ geminiApiKey, geminiModel, aiEnabled, generateContent });
   app.disable('x-powered-by');
   app.use(helmet());
   app.use(cors({ origin: clientUrl, credentials: true }));
   app.use(express.json({ limit: '100kb' }));
   app.get('/api/health', (request, response) => response.status(mongoose.connection.readyState === 1 ? 200 : 503).json({
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    aiConfigured: Boolean(geminiApiKey || generateContent),
+    aiConfigured: generate.configured,
   }));
   const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 50, standardHeaders: 'draft-8', legacyHeaders: false, message: { error: 'Too many sign-in attempts. Try again in 15 minutes.' } });
   const tokenFor = (user) => jwt.sign({ id: user._id.toString() }, jwtSecret, { algorithm: 'HS256', expiresIn: '7d', issuer: 'creatorforge', audience: 'creatorforge-client' });
-  installGoogleAuth(app, { jwtSecret, googleClientId, verifyGoogleCredential, clientUrl, authLimiter, tokenFor, safeUser });
+  installGoogleAuth(app, { jwtSecret, firebaseConfig, firebaseGoogleEnabled, verifyFirebaseCredential, clientUrl, authLimiter, tokenFor, safeUser });
   app.post('/api/auth/register', authLimiter, asyncRoute(async (request, response) => {
     const values = z.object({ name: string(50).min(1), email, password }).parse(request.body);
     if (await User.exists({ email: values.email })) fail(409, 'An account with this email already exists.');
@@ -105,6 +106,7 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, generateConten
     if (!found) fail(404, 'Media not found.');
     return found;
   };
+  installContentRoutes(app, { ownedMedia });
   app.get('/api/auth/me', (request, response) => response.json(safeUser(request.user)));
   app.get('/api/projects', asyncRoute(async (request, response) => {
     const projects = await Project.find({ userId: request.user._id }).sort({ updatedAt: -1 }).lean();

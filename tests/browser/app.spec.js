@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('landing, account, projects, media and brand kit work at this viewport', async ({ page }, info) => {
+  await page.route('**/api/auth/google/config', (route) => route.fulfill({ json: { configured: false, firebase: null } }));
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');

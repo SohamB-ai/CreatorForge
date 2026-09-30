@@ -17,7 +17,7 @@ const jwtSecret = 'test-only-creatorforge-secret-at-least-thirty-two-characters'
 before(async () => {
   database = await MongoMemoryServer.create();
   await mongoose.connect(database.getUri(), { dbName: 'creatorforge-test' });
-  const app = createApp({ jwtSecret, generateContent: async (request) => { requests.push(request); if (providerFails) throw new Error('provider secret must never be exposed'); return { text: '# Test generation\nGrounded in the supplied sources.' }; } });
+  const app = createApp({ jwtSecret, aiEnabled: true, geminiModel: 'gemini-test-model', generateContent: async (request) => { requests.push(request); if (providerFails) throw new Error('provider secret must never be exposed'); return { text: '# Test generation\nGrounded in the supplied sources.' }; } });
   server = app.listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
   base = `http://127.0.0.1:${server.address().port}/api`;
@@ -125,6 +125,59 @@ test('CreatorForge authentication, ownership, media, brand and generation contra
     assert.ok(!requests.at(-1).contents.at(-1).parts.some((part) => part.inlineData));
     assert.match(requests.at(-1).contents.at(-1).parts[0].text, /Keep it concise/);
     assert.equal((await request('/remix', { token: stranger.token, method: 'POST', body: { projectId: project._id, mediaId: asset._id, format: 'Blog post' } })).status, 404);
+  });
+  await context.test('saved text edits preserve exact content, metadata and account ownership', async () => {
+    const endpoint = `/projects/${project._id}/media/${asset._id}`;
+    const original = await request(`${endpoint}/edit`, { token: owner.token });
+    assert.equal(original.status, 200);
+    assert.equal(original.data.version, 0);
+    assert.equal(original.data.asset.data, undefined);
+    const content = '  # Revised launch\n\nA creator’s voice ✨\n';
+    const updated = await request(endpoint, { token: owner.token, method: 'PATCH', body: { content, version: original.data.version } });
+    assert.equal(updated.status, 200);
+    assert.equal(updated.data.content, content);
+    assert.equal(updated.data.version, 1);
+    assert.equal(updated.data.asset.size, Buffer.byteLength(content));
+    assert.equal(updated.data.asset.data, undefined);
+    assert.equal(updated.data.asset.userId, owner.user._id);
+    assert.equal((await request(`${endpoint}/edit`, { token: owner.token })).data.content, content);
+    assert.equal((await request(`${endpoint}/content`, { token: owner.token })).data, content);
+    for (const suffix of ['/edit', '/export?format=markdown']) assert.equal((await request(`${endpoint}${suffix}`, { token: stranger.token })).status, 404);
+    assert.equal((await request(endpoint, { token: stranger.token, method: 'PATCH', body: { content: 'stolen', version: 1 } })).status, 404);
+    assert.equal((await request(`${endpoint}/export`)).status, 401);
+  });
+  await context.test('stale or concurrent edits never silently overwrite the saved revision', async () => {
+    const endpoint = `/projects/${project._id}/media/${asset._id}`;
+    assert.equal((await request(endpoint, { token: owner.token, method: 'PATCH', body: { content: 'stale draft', version: 0 } })).status, 409);
+    const results = await Promise.all(['draft one', 'draft two'].map((content) => request(endpoint, { token: owner.token, method: 'PATCH', body: { content, version: 1 } })));
+    assert.deepEqual(results.map((result) => result.status).sort(), [200, 409]);
+    const saved = (await request(`${endpoint}/edit`, { token: owner.token })).data;
+    assert.equal(saved.version, 2);
+    assert.ok(['draft one', 'draft two'].includes(saved.content));
+  });
+  await context.test('editing validates UTF-8 byte limits, nulls, versions and immutable fields', async () => {
+    const endpoint = `/projects/${project._id}/media/${asset._id}`;
+    for (const body of [{ content: 'a'.repeat(60001), version: 2 }, { content: '✨'.repeat(21000), version: 2 }, { content: 'null\0byte', version: 2 }, { content: 'valid', version: -1 }, { content: 'valid', version: 2, userId: stranger.user._id }, { content: 'missing version' }]) assert.equal((await request(endpoint, { token: owner.token, method: 'PATCH', body })).status, 400);
+    const saved = await request(endpoint, { token: owner.token, method: 'PATCH', body: { content: '', version: 2 } });
+    assert.equal(saved.status, 400);
+    assert.equal((await request(`${endpoint}/edit`, { token: owner.token })).data.version, 2);
+  });
+  await context.test('Markdown and text exports download the saved bytes with safe headers', async () => {
+    const generated = await Media.findOne({ projectId: project._id, mimeType: 'text/markdown' }).select('+data');
+    const endpoint = `/projects/${project._id}/media/${generated._id}`;
+    for (const format of ['markdown', 'text']) {
+      const result = await request(`${endpoint}/export?format=${format}`, { token: owner.token });
+      assert.equal(result.status, 200);
+      assert.equal(result.data, Buffer.from(generated.data, 'base64').toString('utf8'));
+      assert.match(result.response.headers.get('content-disposition'), /attachment; filename\*=UTF-8''/);
+      assert.match(result.response.headers.get('content-disposition'), format === 'markdown' ? /\.md$/ : /\.txt$/);
+      assert.equal(result.response.headers.get('cache-control'), 'private, no-store');
+    }
+    assert.equal((await request(`${endpoint}/export?format=html`, { token: owner.token })).status, 400);
+    const image = await Media.findOne({ projectId: project._id, type: 'image' });
+    assert.equal((await request(`/projects/${project._id}/media/${image._id}/edit`, { token: owner.token })).status, 415);
+    assert.equal((await request(`/projects/${project._id}/media/${image._id}/export`, { token: owner.token })).status, 415);
+    assert.equal((await request(`/projects/${project._id}/media/${image._id}`, { token: owner.token, method: 'PATCH', body: { content: 'bad', version: 0 } })).status, 415);
   });
   await context.test('provider errors are sanitized and do not save phantom messages', async () => {
     providerFails = true;
