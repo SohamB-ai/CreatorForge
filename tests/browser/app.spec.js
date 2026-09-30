@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('landing, account, projects, media and brand kit work at this viewport', async ({ page }, info) => {
   await page.route('**/api/auth/google/config', (route) => route.fulfill({ json: { configured: false, firebase: null } }));
-  await page.route('**/api/chat', (route) => route.fulfill({ status: 503, json: { error: 'AI generation is disabled or incomplete. Configure GEMINI_API_KEY and GEMINI_MODEL before enabling generation.', code: 'AI_NOT_CONFIGURED' } }));
+  await page.route('**/api/chat/stream', (route) => route.fulfill({ status: 503, json: { error: 'AI generation is disabled or incomplete. Configure GEMINI_API_KEY and GEMINI_MODEL before enabling generation.', code: 'AI_NOT_CONFIGURED' } }));
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');

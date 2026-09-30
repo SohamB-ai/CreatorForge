@@ -11,12 +11,15 @@ import { User, Project, Media, Message, BrandKit } from './models.js';
 import { createGenerator } from './ai.js';
 import { installGoogleAuth } from './google-auth.js';
 import { installContentRoutes } from './content.js';
+import { installChatStream } from './chat-stream.js';
+import { installOnboarding, skillIdsSchema, validateProjectSkills } from './onboarding.js';
+import { resolveProjectSkill } from './project-skills.js';
 
 export const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const string = (maximum) => z.string().trim().max(maximum);
 const password = z.string().min(8).refine((value) => Buffer.byteLength(value, 'utf8') <= 72, 'Password must fit within 72 UTF-8 bytes.');
 const email = z.string().trim().email().max(254).transform((value) => value.toLowerCase());
-const projectSchema = z.object({ name: string(100).min(1), description: string(500).default('') });
+const projectSchema = z.object({ name: string(100).min(1), description: string(500).default(''), skillIds: skillIdsSchema.optional() });
 const brandSchema = z.object({
   name: string(100).default(''), tone: string(200).default('Professional and conversational'),
   audience: string(500).default(''), keywords: z.array(string(60)).max(30).default([]),
@@ -56,10 +59,10 @@ function validateFile(file) {
   } else if (!matches[mime]) fail(415, 'The file contents do not match the declared file type.');
 }
 
-export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = false, generateContent, firebaseConfig, firebaseGoogleEnabled = false, verifyFirebaseCredential, clientUrl = 'http://127.0.0.1:5173' } = {}) {
+export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = false, generateContent, generateContentStream, streamTimeoutMs, firebaseConfig, firebaseGoogleEnabled = false, verifyFirebaseCredential, clientUrl = 'http://127.0.0.1:5173' } = {}) {
   if (!jwtSecret || jwtSecret.length < 32 || jwtSecret.startsWith('replace_with')) throw new Error('JWT_SECRET must contain at least 32 characters and must not be the example placeholder.');
   const app = express();
-  const generate = createGenerator({ geminiApiKey, geminiModel, aiEnabled, generateContent });
+  const generate = createGenerator({ geminiApiKey, geminiModel, aiEnabled, generateContent, generateContentStream });
   app.disable('x-powered-by');
   app.use(helmet());
   app.use(cors({ origin: clientUrl, credentials: true }));
@@ -96,6 +99,7 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
     if (!request.user) fail(401, 'Your account is no longer available.');
     next();
   }));
+  installOnboarding(app, { asyncRoute });
   const ownedProject = async (request, projectId) => {
     if (!mongoose.isValidObjectId(projectId)) fail(404, 'Project not found.');
     const found = await Project.findOne({ _id: projectId, userId: request.user._id });
@@ -109,7 +113,7 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
     if (!found) fail(404, 'Media not found.');
     return found;
   };
-  installContentRoutes(app, { ownedMedia });
+  installContentRoutes(app, { ownedMedia, ownedProject });
   app.get('/api/auth/me', (request, response) => response.json(safeUser(request.user)));
   app.get('/api/projects', asyncRoute(async (request, response) => {
     const projects = await Project.find({ userId: request.user._id }).sort({ updatedAt: -1 }).lean();
@@ -119,12 +123,24 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
     }))));
   }));
   app.post('/api/projects', asyncRoute(async (request, response) => {
-    response.status(201).json(await Project.create({ ...projectSchema.parse(request.body), userId: request.user._id }));
+    const values = projectSchema.parse(request.body);
+    await validateProjectSkills(request.user._id, values.skillIds);
+    response.status(201).json(await Project.create({ ...values, userId: request.user._id }));
   }));
   app.get('/api/projects/:id', asyncRoute(async (request, response) => response.json(await ownedProject(request, request.params.id))));
+  app.patch('/api/projects/:id/skills', asyncRoute(async (request, response) => {
+    const found = await ownedProject(request, request.params.id);
+    const { skillIds } = z.object({ skillIds: skillIdsSchema }).strict().parse(request.body);
+    await validateProjectSkills(request.user._id, skillIds.filter(identifier => !found.skillIds?.includes(identifier)));
+    const updated = await Project.findOneAndUpdate({ _id: found._id, userId: request.user._id }, { $addToSet: { skillIds: { $each: skillIds } } }, { new: true, runValidators: true });
+    if (!updated) fail(404, 'Project not found.');
+    response.json(updated);
+  }));
   app.patch('/api/projects/:id', asyncRoute(async (request, response) => {
     const found = await ownedProject(request, request.params.id);
-    Object.assign(found, projectSchema.partial().parse(request.body));
+    const values = projectSchema.partial().parse(request.body);
+    await validateProjectSkills(request.user._id, values.skillIds?.filter(identifier => !found.skillIds?.includes(identifier)));
+    Object.assign(found, values);
     response.json(await found.save());
   }));
   app.delete('/api/projects/:id', asyncRoute(async (request, response) => {
@@ -190,15 +206,17 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
     inFlight.add(key);
     try { return await operation(); } finally { inFlight.delete(key); }
   };
+  installChatStream(app, { aiLimiter, asyncRoute, ownedProject, withProjectLock, generate, streamTimeoutMs });
   app.post('/api/chat', aiLimiter, asyncRoute(async (request, response) => {
-    const values = z.object({ projectId: z.string(), message: string(10000).min(1) }).parse(request.body);
+    const values = z.object({ projectId: z.string(), message: string(10000).min(1), skillId: string(80).min(1).optional() }).parse(request.body);
     const found = await ownedProject(request, values.projectId);
     const result = await withProjectLock(found._id, async () => {
       const [media, history, brand] = await Promise.all([
         Media.find({ projectId: found._id }).select('+data'), Message.find({ projectId: found._id }).sort({ createdAt: -1, _id: -1 }).limit(30),
         BrandKit.findOne({ userId: request.user._id }).select('-userId -_id -__v').lean(),
       ]);
-      const content = await generate({ project: found, media, history: history.reverse(), brand, prompt: values.message });
+      const skill = resolveProjectSkill(found, values.skillId, media);
+      const content = await generate({ project: found, media, history: history.reverse(), brand, prompt: values.message, skill });
       const userMessage = await Message.create({ projectId: found._id, userId: request.user._id, role: 'user', content: values.message });
       const assistantMessage = await Message.create({ projectId: found._id, userId: request.user._id, role: 'model', content });
       return { userMessage, assistantMessage };

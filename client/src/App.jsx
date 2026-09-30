@@ -32,9 +32,13 @@ import {
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { api, errorText } from './api.js';
+import { api, errorText, streamChat } from './api.js';
 import GoogleSignIn from './GoogleSignIn.jsx';
 import SavedContent from './SavedContent.jsx';
+import ChatMessageActions from './ChatMessageActions.jsx';
+import Onboarding, { CreatorWelcome } from './Onboarding.jsx';
+import Skills from './Skills.jsx';
+import { skillById } from '../../shared/skills.js';
 import { BorderBeam } from './components/BorderBeam.jsx';
 import { BentoGrid } from './components/BentoGrid.jsx';
 import { TrustWall } from './components/TrustWall.jsx';
@@ -186,6 +190,8 @@ export default function App() {
           <Route path="/login" element={<AuthPage />} />
           <Route path="/register" element={<AuthPage register />} />
           <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
+          <Route path="/onboarding" element={<Protected><Shell><Onboarding /></Shell></Protected>} />
+          <Route path="/skills" element={<Protected><Shell><Skills /></Shell></Protected>} />
           <Route path="/project/:id" element={<Protected><Workspace /></Protected>} />
           <Route path="/settings/brandkit" element={<Protected><BrandSettings /></Protected>} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -615,6 +621,8 @@ function Dashboard() {
           </button>
         </div>
 
+        <CreatorWelcome onCreate={() => setDialog({ type: 'create' })} />
+
         <div className="section-toolbar">
           <div>
             <h2>Projects <span className="count">{projects.length}</span></h2>
@@ -800,6 +808,9 @@ function Workspace() {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState('');
+  const [draftResponse, setDraftResponse] = useState('');
+  const [selectedSkillId, setSelectedSkillId] = useState('');
+  const generation = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -812,9 +823,18 @@ function Workspace() {
   const [editProject, setEditProject] = useState(false);
   const fileInput = useRef(null);
   const chatEnd = useRef(null);
+  const currentProjectId = useRef(id);
+  currentProjectId.current = id;
+  const savingResponse = useRef(null);
+  const [savingMessageId, setSavingMessageId] = useState('');
 
   useEffect(() => {
     let active = true;
+    setBusy(false);
+    setPending('');
+    setDraftResponse('');
+    setInput('');
+    setSelectedSkillId('');
     setLoading(true);
     setError('');
     Promise.all([
@@ -831,7 +851,11 @@ function Workspace() {
       })
       .catch((failure) => active && setError(errorText(failure)))
       .finally(() => active && setLoading(false));
-    return () => { active = false; };
+    return () => {
+      active = false;
+      generation.current?.abort();
+      generation.current = null;
+    };
   }, [id]);
 
   useEffect(() => {
@@ -839,7 +863,7 @@ function Workspace() {
       block: 'nearest',
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
     });
-  }, [messages, pending]);
+  }, [messages, pending, draftResponse]);
 
   async function uploadFiles(files) {
     if (uploading) return;
@@ -872,18 +896,28 @@ function Workspace() {
   async function send(event, prompt) {
     event?.preventDefault();
     const message = (prompt || input).trim();
-    if (!message || busy) return;
+    if (!message || busy || generation.current) return;
+    const controller = new AbortController();
+    generation.current = controller;
+    const active = () => generation.current === controller && currentProjectId.current === id;
     setBusy(true);
     setPending(message);
+    setInput(message);
+    setDraftResponse('');
     try {
-      const { data } = await api.post('/chat', { projectId: id, message });
+      const data = await streamChat({ projectId: id, message, ...(selectedSkillId ? { skillId: selectedSkillId } : {}) }, { signal: controller.signal, onDelta: (content) => active() && setDraftResponse(content) });
+      if (!active()) return;
       setMessages((history) => [...history, data.userMessage, data.assistantMessage]);
       setInput('');
     } catch (failure) {
-      notify(errorText(failure), 'error');
+      if (active()) notify(failure.name === 'AbortError' ? 'Generation stopped. Your prompt is kept; no partial response was saved.' : errorText(failure), failure.name === 'AbortError' ? 'info' : 'error');
     } finally {
-      setBusy(false);
-      setPending('');
+      if (active()) {
+        generation.current = null;
+        setBusy(false);
+        setPending('');
+        setDraftResponse('');
+      }
     }
   }
 
@@ -904,6 +938,25 @@ function Workspace() {
     }
   }
 
+  async function saveResponse(message) {
+    if (savingResponse.current || media.some((asset) => asset.sourceMessageId === message._id)) return;
+    const request = { projectId: id, messageId: message._id };
+    savingResponse.current = request;
+    setSavingMessageId(message._id);
+    try {
+      const { data } = await api.post(`/projects/${id}/messages/${message._id}/save`, {});
+      if (currentProjectId.current !== request.projectId) return;
+      setMedia((assets) => [data, ...assets.filter((asset) => asset._id !== data._id)]);
+      notify('Response saved to your source library. Open it to edit or export.');
+    } catch (failure) {
+      if (currentProjectId.current === request.projectId) notify(errorText(failure), 'error');
+    } finally {
+      if (savingResponse.current === request) {
+        savingResponse.current = null;
+        setSavingMessageId('');
+      }
+    }
+  }
   function contentSaved(asset) {
     setMedia((assets) => assets.map((item) => (item._id === asset._id ? asset : item)));
     notify('Content changes saved to your project.');
@@ -1066,9 +1119,20 @@ function Workspace() {
           {health && !health.aiConfigured && (
             <div className="connection-notice" role="status">
               <span className="warning-dot" />
-              <span><strong>AI connection needed.</strong> Your projects and uploads work now. Configure GEMINI_API_KEY and GEMINI_MODEL, then explicitly enable AI generation.</span>
+              <span>
+                <strong>{health.aiConfiguration?.keyPresent && health.aiConfiguration?.modelPresent ? 'AI generation is paused.' : 'AI connection needed.'}</strong>{' '}
+                {health.aiConfiguration?.keyPresent && health.aiConfiguration?.modelPresent ? 'Key and model are configured. Verify provider access with npm run check:ai before enabling generation.' : 'Your projects and uploads work now. Configure GEMINI_API_KEY and GEMINI_MODEL, then explicitly enable AI generation.'}
+              </span>
             </div>
           )}
+
+          {tab === 'chat' && <section className="workspace-skills" aria-label="Project skills">
+            <div className="workspace-skills-heading"><h3>Project skills & agents</h3><Link to={`/skills?project=${id}`}>Add skills</Link></div>
+            {project.skillIds?.length ? <>
+              <label>Active skill<select aria-label="Active project skill" value={selectedSkillId} disabled={busy} onChange={event => setSelectedSkillId(event.target.value)}><option value="">General project chat</option>{project.skillIds.map(identifier => { const skill = skillById(identifier); return skill && <option key={identifier} value={identifier}>{skill.title} · {skill.agent.name}</option>; })}</select></label>
+              {selectedSkillId && <><p>{skillById(selectedSkillId)?.description} Source: {skillById(selectedSkillId)?.inputs}. This agent returns text, not rendered media.</p><button className="button secondary" disabled={busy || (skillById(selectedSkillId)?.sourceTypes.length > 0 && !media.some(asset => skillById(selectedSkillId).sourceTypes.includes(asset.type)))} onClick={() => send(null, skillById(selectedSkillId).prompt)}><Sparkles size={15} />Run {skillById(selectedSkillId)?.agent.name}</button></>}
+            </> : <p>Add specialist skills to this project, or keep using general chat and remix.</p>}
+          </section>}
 
           <div id="creation-content" role="tabpanel" aria-labelledby={tab === 'chat' ? 'chat-tab' : 'remix-tab'} className="creation-content">
             {tab === 'chat' ? (
@@ -1117,15 +1181,7 @@ function Workspace() {
                                   minute: '2-digit',
                                 })}
                               </span>
-                              {message.role === 'model' && (
-                                <button
-                                  className="icon-button"
-                                  aria-label="Copy response"
-                                  onClick={() => copy(message.content)}
-                                >
-                                  <Copy size={14} />
-                                </button>
-                              )}
+                              {message.role === 'model' && <ChatMessageActions saved={media.some((asset) => asset.sourceMessageId === message._id)} saving={savingMessageId === message._id} disabled={Boolean(savingMessageId)} onSave={() => saveResponse(message)} onCopy={() => copy(message.content)} />}
                             </header>
                             <div className="markdown">
                               <Markdown remarkPlugins={[remarkGfm]}>{message.content}</Markdown>
@@ -1142,8 +1198,14 @@ function Workspace() {
                               <p>{pending}</p>
                             </div>
                           </article>
+                          {draftResponse && <article className="message model" aria-label="Response in progress">
+                            <span className="message-avatar"><Sparkles size={17} /></span>
+                            <div><header><strong>CreatorForge</strong><span>Draft · not saved yet</span></header>
+                              <div className="markdown"><Markdown remarkPlugins={[remarkGfm]}>{draftResponse}</Markdown></div>
+                            </div>
+                          </article>}
                           <div className="generating" role="status">
-                            <LoaderCircle className="spin" size={17} />Connecting your sources…
+                            <LoaderCircle className="spin" size={17} />{draftResponse ? 'Writing your response…' : 'Connecting your sources…'}
                           </div>
                         </>
                       )}
@@ -1171,9 +1233,9 @@ function Workspace() {
                     />
                     <div className="composer-footer">
                       <span><Sparkles size={13} />Project context + your brand voice</span>
-                      <button className="send-button" aria-label="Send message" disabled={busy || !input.trim()}>
+                      {pending ? <button key="stop-generation" type="button" className="send-button" aria-label="Stop generation" title="Stop generation" onClick={(event) => { event.preventDefault(); generation.current?.abort(); }}><span aria-hidden="true">■</span></button> : <button key="send-message" type="submit" className="send-button" aria-label="Send message" disabled={busy || !input.trim()}>
                         {busy ? <LoaderCircle className="spin" size={18} /> : <ArrowUp size={19} />}
-                      </button>
+                      </button>}
                     </div>
                   </form>
                   <p className="composer-note">Creates text and code, not rendered images or videos. Review before publishing.</p>
@@ -1359,17 +1421,17 @@ function BrandSettings() {
                   placeholder="Thoughtful, independent, sustainable"
                 />
               </Field>
-              <Field label="Brand colors" hint="Hex codes separated by commas, e.g. #8B5CF6, #10B981.">
-                <div>
+              <div>
+                <Field label="Brand colors" hint="Hex codes separated by commas, e.g. #8B5CF6, #10B981.">
                   <input
                     name="colors"
                     value={colorInput}
-                    onChange={(e) => setColorInput(e.target.value)}
+                    onChange={(event) => setColorInput(event.target.value)}
                     placeholder="#8B5CF6, #10B981"
                   />
-                  <BrandColorPreview colors={colorInput} />
-                </div>
-              </Field>
+                </Field>
+                <BrandColorPreview colors={colorInput} />
+              </div>
               <h2 className="guidelines-heading">The creative guardrails</h2>
               <Field label="Brand guidelines">
                 <textarea

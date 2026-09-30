@@ -69,7 +69,7 @@ AI_GENERATION_ENABLED=true
 ```
 
 Restart the app after changing backend environment variables. Run `npm run check:ai` to make one minimal live provider request without printing the key or changing the application/authentication flags. Model listing alone is not proof of generation access.
-Replace the model placeholder with an actual `gemini-...` model ID. There is no hardcoded default, automatic model switch or fake-provider fallback. Disabled/incomplete configuration returns a clear error without calling Google or persisting phantom output. Configuration presence does not prove live model access: test an actual generation before release. The user authorized configuration, so the supplied key is now saved only in the gitignored, permission-restricted backend environment. Google lists `gemini-3.8-flash`, but a real generation probe returned HTTP 403: "Your project has been denied access. Please contact support." AI remains explicitly disabled until project access is resolved or a replacement authorized key passes `npm run check:ai`.
+Replace the model placeholder with an actual `gemini-...` model ID. There is no hardcoded default, automatic model switch or fake-provider fallback. Disabled/incomplete configuration returns a clear error without calling Google or persisting phantom output. Configuration presence does not prove live model access: test an actual generation before release. On September 30, 2026, the user's replacement key passed live generation and was saved only in the gitignored, permission-restricted backend environment. `gemini-3.8-flash` passed a minimal text probe but image requests encountered temporary provider overload; `gemini-3.5-flash` also had intermittent request failures. The local configuration was explicitly changed to provider-listed `gemini-3.5-flash-lite` after successful image-based generation; AI is now enabled locally. Real browser chat with two image fixtures and real remix generation succeeded, with persisted content, editable saved output and exact Markdown/text downloads. Provider availability/quota can still cause failures; this does not establish production deployment or rendered image/video output.
 An existing detached development session can be stopped with `kill "$(cat tmp/dev.pid)"` from the project root.
 
 ### Google sign-in
@@ -80,6 +80,11 @@ See [Google Sign-In Setup](./docs/GOOGLE_AUTH_SETUP.md) for authorized origins, 
 
 For MongoDB Atlas or production, also set `MONGODB_URI`, a random `JWT_SECRET` of at least 32 characters, and `CLIENT_URL`.
 Copy the examples in `server/.env.example` and `client/.env.example` only when needed; replace placeholders and never commit secrets.
+
+### Profession onboarding and skills
+Visit `/onboarding` after signing in, or choose **Personalize my workspace** on the dashboard. Select multiple professions, choose starting skills and continue to `/skills`. Switch a profession filter without losing your combined selection; create a new project or add skills to an existing one. In a project, select **Active project skill**, upload the indicated sources and run its assigned specialist workflow. All generated outputs are text; image prompts do not render images. Student skills remain unavailable until their workflows are supplied. Account authentication/Firebase configuration is unchanged.
+
+The catalog and assigned instructions live in `shared/skills.js`. All seven skills use the existing Gemini model; they are not independently provisioned workers. Onboarding and project creation do not make AI requests. Per-skill output history/provenance and autonomous multi-agent pipelines are not implemented.
 
 ### Verification
 ```bash
@@ -100,6 +105,7 @@ AI payload tests inject a test-only provider; they do not prove live Gemini acce
 - Run `npm run check:deploy` for an offline check of hosted MongoDB, the production session secret, HTTPS origins, frontend API routing and enabled AI configuration. It never deploys, enables billing or prints secrets; the local setup currently reports four missing production configuration items. Existing dependency audit findings also remain a release blocker. Those production credentials/origins must come from the intended deployment account; local development settings are not substituted to make this check pass.
 
 ### Saved content editing and export
+- Click **Save response to library** beside an AI chat response to create an editable Markdown asset. The saved indicator survives reload; repeated or simultaneous saves reuse the same asset without overwriting your later edits. Removing the asset allows saving the original response again.
 - Open any text/Markdown asset in the source library, click **Edit content**, then **Save changes**. Remix results use the same saved editor and reopen from the source library after reload.
 - Edits update the same asset and preserve its owner/project, MIME type, filename and exact UTF-8 content. A version conflict keeps your draft instead of silently overwriting another session's work; use **Reload saved version** when ready.
 - Editing is limited to nonempty content up to 60,000 UTF-8 bytes. Larger text assets remain previewable/exportable. Binary media cannot be edited through this endpoint.

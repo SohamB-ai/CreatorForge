@@ -23,6 +23,7 @@ export const Project = mongoose.model('Project', new Schema({
   userId: owner,
   name: { type: String, required: true },
   description: { type: String, default: '' },
+  skillIds: { type: [String], default: [] },
 }, options));
 export const Media = mongoose.model('Media', new Schema({
   userId: owner,
@@ -32,6 +33,7 @@ export const Media = mongoose.model('Media', new Schema({
   mimeType: { type: String, required: true },
   size: { type: Number, required: true },
   data: { type: String, required: true, select: false },
+  sourceMessageId: { type: Schema.Types.ObjectId, ref: 'Message', unique: true, sparse: true },
   autoDescription: { type: String, default: '' },
 }, options));
 export const Message = mongoose.model('Message', new Schema({
@@ -48,4 +50,13 @@ export const BrandKit = mongoose.model('BrandKit', new Schema({
   keywords: { type: [String], default: [] },
   colors: { type: [String], default: [] },
   guidelines: { type: String, default: '' },
+}, options));
+export const CreatorProfile = mongoose.model('CreatorProfile', new Schema({
+  userId: { ...owner, unique: true },
+  role: { type: String },
+  roleDetail: { type: String, default: '' },
+  goals: { type: [String], default: [] },
+  professions: { type: [String], default: [] },
+  skillIds: { type: [String], default: [] },
+  workflow: { type: String, default: '' },
 }, options));

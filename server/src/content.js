@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { Media, Project } from './models.js';
+import mongoose from 'mongoose';
+import { Media, Message, Project } from './models.js';
 
 export const MAX_EDIT_BYTES = 60000;
 const route = (handler) => (request, response, next) => Promise.resolve(handler(request, response)).catch(next);
@@ -7,7 +8,34 @@ const fail = (status, message) => { throw Object.assign(new Error(message), { st
 const safeAsset = (asset) => { const result = asset.toObject(); delete result.data; return result; };
 const ensureText = (asset) => { if (asset.type !== 'text') fail(415, 'Only text assets can be edited or exported as Markdown/text.'); };
 
-export function installContentRoutes(app, { ownedMedia }) {
+export function installContentRoutes(app, { ownedMedia, ownedProject }) {
+  app.post('/api/projects/:id/messages/:messageId/save', route(async (request, response) => {
+    const project = await ownedProject(request, request.params.id);
+    z.object({}).strict().parse(request.body || {});
+    if (!mongoose.isValidObjectId(request.params.messageId)) fail(404, 'Message not found.');
+    const message = await Message.findOne({ _id: request.params.messageId, projectId: project._id, userId: request.user._id });
+    if (!message) fail(404, 'Message not found.');
+    if (message.role !== 'model') fail(415, 'Only AI responses can be saved to the source library.');
+    const savedQuery = { sourceMessageId: message._id, projectId: project._id, userId: request.user._id };
+    const existing = await Media.findOne(savedQuery);
+    if (existing) return response.json(safeAsset(existing));
+    const size = Buffer.byteLength(message.content, 'utf8');
+    if (!message.content.trim() || size > MAX_EDIT_BYTES || message.content.includes('\0')) fail(400, 'Save a nonempty AI response within the 60 KB editing limit.');
+    const totals = await Media.aggregate([{ $match: { projectId: project._id } }, { $group: { _id: null, bytes: { $sum: '$size' } } }]);
+    if ((totals[0]?.bytes || 0) + size > 50 * 1024 * 1024) fail(413, 'This project has reached its 50 MB storage limit.');
+    await Media.init();
+    let asset;
+    try {
+      asset = await Media.create({ ...savedQuery, name: 'Saved AI response.md', type: 'text', mimeType: 'text/markdown', size, data: Buffer.from(message.content, 'utf8').toString('base64') });
+    } catch (failure) {
+      if (failure.code !== 11000) throw failure;
+      const saved = await Media.findOne(savedQuery);
+      if (!saved) throw failure;
+      return response.json(safeAsset(saved));
+    }
+    await Project.updateOne({ _id: project._id, userId: request.user._id }, { $set: { updatedAt: new Date() } });
+    response.status(201).json(safeAsset(asset));
+  }));
   app.get('/api/projects/:id/media/:mediaId/edit', route(async (request, response) => {
     const asset = await ownedMedia(request);
     ensureText(asset);
