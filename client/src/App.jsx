@@ -598,7 +598,7 @@ function AuthPage({ register = false }) {
           <GoogleSignIn
             key={register ? 'register' : 'login'}
             disabled={busy}
-            light={true}
+            light={false}
             onBusyChange={setGoogleBusy}
             onSuccess={(data) => {
               auth.signIn(data);
@@ -861,7 +861,7 @@ function Dashboard() {
                     <span><MessageSquare size={12} className="text-[var(--color-charcoal)]" />{project.messageCount || 0} {project.messageCount === 1 ? 'dispatch' : 'dispatches'}</span>
                   </div>
                 </Link>
-                <div className="project-footer px-5 py-2.5 border-t border-[var(--color-ink-black)] bg-[#c5beba] flex items-center justify-between text-xs text-[var(--color-charcoal)] font-editorial-new">
+                <div className="project-footer px-5 py-2.5 border-t border-[var(--color-ink-black)] bg-[var(--color-elevated)] flex items-center justify-between text-xs text-[var(--color-charcoal)] font-editorial-new">
                   <span>Updated {new Date(project.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                   <div className="flex items-center gap-1">
                     <button
