@@ -116,27 +116,27 @@ export function TrustWall() {
   return (
     <section
       ref={containerRef}
-      className="trust-wall-section border-y border-[var(--color-ink-black)] bg-[var(--color-bone-cream)] py-8 my-8 transition-colors relative overflow-hidden"
-      aria-label="Integrated with modern studios and formats"
+      className="trust-wall-section border-y border-[var(--color-border)] bg-[var(--color-surface)] py-8 my-8 transition-colors relative overflow-hidden"
+      aria-label="Integrated with modern publishing workflows"
     >
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-5">
           <p
             ref={headingRef}
-            className="font-editorial-new text-xs uppercase tracking-wider text-[var(--color-charcoal)] will-change-transform"
+            className="font-editorial-new text-xs uppercase tracking-wider text-[var(--color-muted)] will-change-transform"
           >
-            Integrated with modern publishing workflows
+            Dispatch 02 · Integrated With Modern Studios & Formats
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-10 md:gap-14 text-[var(--color-ink-black)]">
+        <div className="flex flex-wrap items-center justify-center gap-10 md:gap-14 text-[var(--color-text)]">
           {logos.map((logo, idx) => (
             <div
               key={logo.name}
               ref={(el) => (logosRef.current[idx] = el)}
               title={logo.name}
               aria-label={logo.name}
-              className="flex items-center justify-center text-[var(--color-charcoal)] hover:text-[var(--color-ink-black)] transition-colors duration-150 cursor-pointer will-change-transform"
+              className="flex items-center justify-center text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors duration-150 cursor-pointer will-change-transform"
             >
               {logo.svg}
             </div>

@@ -15,7 +15,7 @@ export function ShimmerButton({
     </span>
   );
 
-  const sharedClasses = `inline-flex cursor-pointer items-center justify-center overflow-hidden whitespace-nowrap rounded-[2.88px] border border-[var(--color-ink-black)] bg-[var(--color-ink-black)] text-[var(--color-parchment)] px-6 py-3 transition-all duration-150 hover:bg-[var(--color-pure-black)] hover:border-[var(--color-pure-black)] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed ${className}`;
+  const sharedClasses = `inline-flex cursor-pointer items-center justify-center overflow-hidden whitespace-nowrap rounded-[2.88px] border border-[var(--primary)] bg-[var(--primary)] text-[var(--primary-foreground)] px-6 py-3 transition-all duration-150 hover:bg-[var(--primary-hover)] hover:border-[var(--primary-hover)] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed ${className}`;
 
   if (to) {
     return (
