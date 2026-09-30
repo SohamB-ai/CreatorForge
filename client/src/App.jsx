@@ -360,7 +360,7 @@ function Landing() {
       </header>
 
       <main>
-        {/* Section 1: Hero — Desired End Result Without the Core Fear */}
+        {/* Section 1: Hero: Desired End Result Without the Core Fear */}
         <section ref={heroSectionRef} className="hero py-14 md:py-20 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div ref={heroCopyRef} className="hero-copy lg:col-span-6 will-change-transform">
             <span className="font-editorial-new text-xs uppercase tracking-wider text-[var(--color-ember-orange)] mb-3 block font-semibold">
@@ -477,17 +477,17 @@ function Landing() {
 
         <OrnateDivider glyph="✶" />
 
-        {/* Section 3: Problem Statement — The Cost of the Problem */}
+        {/* Section 3: Problem Statement: The Cost of the Problem */}
         <ProblemSection />
 
         <OrnateDivider glyph="❧" />
 
-        {/* Section 4: Solution & Value — 6 Comprehensive Feature Pillars */}
+        {/* Section 4: Solution & Value: 6 Comprehensive Feature Pillars */}
         <BentoGrid />
 
         <OrnateDivider glyph="✤" />
 
-        {/* Section 5: How It Works — 3 Frictionless Steps */}
+        {/* Section 5: How It Works: 3 Frictionless Steps */}
         <HowItWorksSection />
 
         <OrnateDivider glyph="✶" />
