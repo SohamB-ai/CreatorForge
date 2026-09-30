@@ -22,8 +22,8 @@ test('a configured but paused AI connection gives an actionable setup message', 
   await page.route('**/api/health', (route) => route.fulfill({ json: { database: 'connected', aiConfigured: false, aiConfiguration: { enabled: false, keyPresent: true, modelPresent: true, model: 'gemini-test-model' } } }));
   const fixture = await prepare(page, request, `paused-${info.project.name}`);
   await expect(page.getByText('AI generation is paused.', { exact: true })).toBeVisible();
-  await expect(page.getByText(/Key and model are configured/)).toBeVisible();
-  await expect(page.getByText(/Creates text and code, not rendered images or videos/)).toBeVisible();
+  await expect(page.getByText(/Key and model configured/)).toBeVisible();
+  await expect(page.getByText(/Produces editorial copy and outlines/)).toBeVisible();
   await request.delete(`/api/projects/${fixture.project._id}`, { headers: fixture.headers });
 });
 
@@ -81,25 +81,20 @@ test('concurrent edit conflict preserves the draft and lets the user reload save
   await request.delete(`/api/projects/${fixture.project._id}`, { headers: fixture.headers });
 });
 
-test('remix output uses a real saved asset editor with a mocked generation response', async ({ page, request }, info) => {
-  const fixture = await prepare(page, request, `remix-${info.project.name}`);
-  await page.route('**/api/remix', async (route) => {
-    const uploaded = await request.post(`/api/projects/${fixture.project._id}/media`, { headers: fixture.headers, multipart: { file: { name: 'remix.md', mimeType: 'text/markdown', buffer: Buffer.from('# Mocked remix\nTest-only generation fixture.') } } });
-    expect(uploaded.status()).toBe(201);
-    const asset = await uploaded.json();
-    await route.fulfill({ json: { content: '# Mocked remix\nTest-only generation fixture.', mediaId: asset._id } });
-  });
-  await page.getByRole('tab', { name: 'Content remix' }).click();
-  await page.getByLabel('Source asset').selectOption(fixture.asset._id);
-  await page.getByRole('button', { name: 'Generate remix' }).click();
-  const editor = page.getByRole('region', { name: 'Saved content editor' });
-  await expect(editor.getByRole('heading', { name: 'Mocked remix' })).toBeVisible();
-  await editor.getByRole('button', { name: 'Edit content', exact: true }).click();
-  await editor.getByLabel('Edit saved content').fill('# Published-ready remix');
-  await editor.getByRole('button', { name: 'Save changes' }).click();
-  await expect(editor.getByText('Saved to project', { exact: true })).toBeVisible();
+test('Studio drafts retain selected sources and notes after reload', async ({ page, request }, info) => {
+  const fixture = await prepare(page, request, `studio-draft-${info.project.name}`);
+  await page.getByRole('tab', { name: 'Agent Studio' }).click();
+  await page.getByRole('button', { name: 'Omnichannel Repurposer', exact: true }).click();
+  await page.getByLabel('Idea / source notes').fill('Adapt this source into clear, grounded posts.');
+  await page.getByText('Reference sources (0)', { exact: true }).click();
+  await page.getByRole('checkbox', { name: 'draft.md', exact: true }).check();
+  await page.getByRole('button', { name: 'Create draft', exact: true }).click();
+  await expect(page.getByText('Saved · revision 0', { exact: true })).toBeVisible();
   await page.reload();
-  await page.getByRole('button', { name: /remix.md TEXT/ }).click();
-  await expect(page.getByRole('heading', { name: 'Published-ready remix' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Agent Studio' }).click();
+  await expect(page.getByLabel('Idea / source notes')).toHaveValue('Adapt this source into clear, grounded posts.');
+  await page.getByText('Reference sources (1)', { exact: true }).click();
+  await expect(page.getByRole('checkbox', { name: 'draft.md', exact: true })).toBeChecked();
   await request.delete(`/api/projects/${fixture.project._id}`, { headers: fixture.headers });
 });
+

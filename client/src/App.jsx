@@ -31,6 +31,7 @@ import remarkGfm from 'remark-gfm';
 import { api, errorText, streamChat } from './api.js';
 import GoogleSignIn from './GoogleSignIn.jsx';
 import SavedContent from './SavedContent.jsx';
+import AgentStudio from './AgentStudio.jsx';
 import ChatMessageActions from './ChatMessageActions.jsx';
 import Onboarding, { CreatorWelcome } from './Onboarding.jsx';
 import Skills from './Skills.jsx';
@@ -274,24 +275,7 @@ function Landing() {
 
   const heroSectionRef = useRef(null);
   const heroCopyRef = useRef(null);
-  const heroVisualRef = useRef(null);
   const proclamationRef = useRef(null);
-
-  const [heroVoicePlaying, setHeroVoicePlaying] = useState(false);
-  const [heroVoiceSec, setHeroVoiceSec] = useState(165);
-  const [heroWaves, setHeroWaves] = useState([35, 70, 45, 90, 60, 40, 80, 50, 25, 65, 85, 30]);
-
-  // Audio wave animation for hero voice record
-  useEffect(() => {
-    let timer;
-    if (heroVoicePlaying) {
-      timer = setInterval(() => {
-        setHeroVoiceSec((s) => s + 1);
-        setHeroWaves((prev) => prev.map(() => Math.floor(Math.random() * 70) + 25));
-      }, 160);
-    }
-    return () => clearInterval(timer);
-  }, [heroVoicePlaying]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -312,31 +296,10 @@ function Landing() {
           }
         );
       }
-
-      // Hero editorial desk entrance
-      if (heroVisualRef.current) {
-        gsap.fromTo(
-          heroVisualRef.current,
-          { opacity: 0, y: 28 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.85,
-            delay: 0.15,
-            ease: 'power2.out',
-          }
-        );
-      }
     });
 
     return () => ctx.revert();
   }, []);
-
-  const formatHeroTimer = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `0${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
 
   return (
     <div className="landing max-w-6xl mx-auto px-6 py-2">
@@ -360,21 +323,21 @@ function Landing() {
       </header>
 
       <main>
-        {/* Section 1: Hero: Desired End Result Without the Core Fear */}
-        <section ref={heroSectionRef} className="hero py-14 md:py-20 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-          <div ref={heroCopyRef} className="hero-copy lg:col-span-6 will-change-transform">
-            <span className="font-editorial-new text-xs uppercase tracking-wider text-[var(--color-ember-orange)] mb-3 block font-semibold">
+        {/* Section 1: Hero: Center Title-Aligned Homepage */}
+        <section ref={heroSectionRef} className="hero py-16 md:py-24 text-center flex flex-col items-center">
+          <div ref={heroCopyRef} className="hero-copy will-change-transform max-w-3xl mx-auto flex flex-col items-center">
+            <span className="font-editorial-new text-xs uppercase tracking-wider text-[var(--color-ember-orange)] mb-4 inline-block font-semibold">
               The Multimodal Scriptorium
             </span>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-canopee font-normal tracking-[-0.04em] text-[var(--color-ink-black)] leading-[0.88] mb-5">
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-canopee font-normal tracking-[-0.04em] text-[var(--color-ink-black)] leading-[0.88] mb-6">
               Turn raw research into<br />
               publication-ready writing.<br />
               <span className="text-[var(--color-ember-orange)] italic font-normal">Without losing your voice.</span>
             </h1>
-            <p className="text-lg text-[var(--color-charcoal)] font-editorial-new leading-[1.35] max-w-lg mb-6">
+            <p className="text-lg md:text-xl text-[var(--color-charcoal)] font-editorial-new leading-[1.4] max-w-2xl mx-auto mb-8">
               CreatorForge grounds your essays, scripts, and threads directly in your primary sources, voice notes, and house style.
             </p>
-            <div className="flex flex-wrap items-center gap-3.5 mb-5">
+            <div className="flex flex-wrap items-center justify-center gap-4 mb-6">
               <ShimmerButton to={next} className="primary">
                 Start Writing Free <ArrowRight size={15} />
               </ShimmerButton>
@@ -382,91 +345,9 @@ function Landing() {
                 Access Archives
               </Link>
             </div>
-            <div className="pt-2 text-xs font-editorial-new text-[var(--color-charcoal)] flex items-center gap-2">
+            <div className="pt-2 text-xs font-editorial-new text-[var(--color-charcoal)] flex items-center justify-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block"></span>
               <span>Trusted by 4,200+ essayists, newsletter authors, and creative directors.</span>
-            </div>
-          </div>
-
-          <div ref={heroVisualRef} className="hero-visual lg:col-span-6 relative will-change-transform">
-            <div className="p-6 md:p-7 rounded-[11.52px] border border-[var(--color-ink-black)] bg-[var(--color-bone-cream)] shadow-[var(--shadow-sm)]">
-              <div className="flex items-center justify-between border-b border-[var(--color-ink-black)] pb-2.5 mb-4 font-editorial-new text-xs uppercase tracking-[-0.01em] text-[var(--color-ink-black)]">
-                <span className="flex items-center gap-2">
-                  <BookOpen size={14} /> Folio Proofs · Active Issue
-                </span>
-                <span className="new-badge">PROOF 01</span>
-              </div>
-
-              {/* Archival illustration plate */}
-              <div className="overflow-hidden border border-[var(--color-ink-black)] bg-[var(--color-parchment)] mb-4 relative rounded-none">
-                <img
-                  src="/assets/creative_studio_art.jpg"
-                  alt="Editorial study and creative references"
-                  className="w-full h-52 object-cover object-center rounded-none"
-                />
-                <span className="absolute bottom-2.5 left-3 inline-flex items-center gap-1.5 font-editorial-new text-xs uppercase tracking-[-0.01em] text-[var(--color-ink-black)] bg-[var(--color-parchment)] px-2.5 py-1 rounded-[2.88px] border border-[var(--color-ink-black)] shadow-[var(--shadow-sm)]">
-                  <Image size={13} className="text-[var(--color-ember-orange)]" /> Photographic Proof · Plate 01
-                </span>
-              </div>
-
-              {/* Multi-source cards grid */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div
-                  onClick={() => setHeroVoicePlaying(!heroVoicePlaying)}
-                  className="p-3 rounded-[2.88px] bg-[var(--color-parchment)] border border-[var(--color-ink-black)] flex flex-col justify-between shadow-[var(--shadow-sm)] cursor-pointer hover:bg-[var(--color-elevated)] transition-colors"
-                  title={heroVoicePlaying ? 'Pause voice recording' : 'Preview voice recording'}
-                >
-                  <div className="flex items-center justify-between text-xs text-[var(--color-charcoal)] font-editorial-new">
-                    <span className="flex items-center gap-1.5 text-[var(--color-ink-black)]">
-                      <AudioLines size={13} className="text-[var(--color-ember-orange)]" /> Voice Tape
-                    </span>
-                    <span className="font-mono text-xs text-[var(--color-ink-black)]">{formatHeroTimer(heroVoiceSec)}</span>
-                  </div>
-                  <div className="h-5 flex items-center gap-1 mt-2">
-                    {heroWaves.map((h, i) => (
-                      <span
-                        key={i}
-                        style={{ height: `${h}%` }}
-                        className={`w-1 rounded-none transition-all duration-150 ${
-                          heroVoicePlaying
-                            ? 'bg-[var(--color-ember-orange)]'
-                            : 'bg-[var(--color-ink-black)] opacity-60'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-[2.88px] bg-[var(--color-parchment)] border border-[var(--color-ink-black)] flex flex-col justify-between shadow-[var(--shadow-sm)]">
-                  <div className="flex items-center justify-between text-xs text-[var(--color-charcoal)] font-editorial-new">
-                    <span className="flex items-center gap-1.5 text-[var(--color-ink-black)]"><FileText size={13} className="text-[var(--color-ember-orange)]" /> Research Brief</span>
-                    <span className="text-xs text-[var(--color-charcoal)]">Rev. 2</span>
-                  </div>
-                  <div className="space-y-1 mt-2">
-                    <div className="h-1 bg-[var(--color-ink-black)] w-full rounded-none" />
-                    <div className="h-1 bg-[var(--color-ink-black)] w-3/4 rounded-none opacity-60" />
-                    <div className="h-1 bg-[var(--color-ember-orange)] w-1/2 rounded-none" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Synthesis result indicator */}
-              <div className="p-3.5 rounded-[2.88px] bg-[var(--color-parchment)] border border-[var(--color-ink-black)] flex items-center justify-between shadow-[var(--shadow-sm)]">
-                <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-[2.88px] border border-[var(--color-ink-black)] bg-[var(--color-ink-black)] flex items-center justify-center text-[var(--color-parchment)]">
-                    <Sparkles size={14} />
-                  </span>
-                  <div>
-                    <strong className="block text-sm font-canopee font-normal text-[var(--color-ink-black)] tracking-[-0.02em]">
-                      Raw research becomes published copy.
-                    </strong>
-                    <small className="text-xs text-[var(--color-charcoal)] font-editorial-new">
-                      Synthesized into high-impact dispatches, threads and scripts
-                    </small>
-                  </div>
-                </div>
-                <ArrowUp size={16} className="text-[var(--color-ink-black)]" />
-              </div>
             </div>
           </div>
         </section>
@@ -998,6 +879,7 @@ function Workspace() {
   const [progress, setProgress] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [studioRunId, setStudioRunId] = useState(null);
   const [source, setSource] = useState('');
   const [format, setFormat] = useState(formats[0]);
   const [instructions, setInstructions] = useState('');
@@ -1227,7 +1109,7 @@ function Workspace() {
               const Icon = mediaIcons[asset.type] || FileText;
               return (
                 <div className="asset border border-[var(--color-ink-black)] bg-[var(--color-parchment)] rounded-[2.88px] transition-colors" key={asset._id}>
-                  <button className="asset-open" onClick={() => setPreview(asset)}>
+                  <button className="asset-open" onClick={() => { if (asset.studioRunId) { setStudioRunId(asset.studioRunId); setTab("remix"); } else setPreview(asset); }}>
                     <span className="asset-icon text-[var(--color-ink-black)]">
                       <Icon size={17} />
                     </span>
@@ -1268,7 +1150,7 @@ function Workspace() {
 
           <div className="context-note border border-[var(--color-ink-black)] bg-[var(--color-parchment)] rounded-[2.88px] p-2.5 mt-auto">
             <Sparkles size={14} className="text-[var(--color-ember-orange)]" />
-            <span>Chat uses all files in context.<br />Remix focuses on your chosen asset.</span>
+            <span>Chat uses all files in context.<br />Studio uses your selected references.</span>
           </div>
         </aside>
 
@@ -1297,7 +1179,7 @@ function Workspace() {
               className={tab === 'remix' ? 'active' : ''}
               onClick={() => setTab('remix')}
             >
-              <WandSparkles size={16} />Cross-Remix
+              <WandSparkles size={16} />Agent Studio
             </button>
             <span className="context-counter font-editorial-new text-xs">
               <FileText size={13} className="text-[var(--color-ink-black)]" />{media.length} references in context
@@ -1319,7 +1201,7 @@ function Workspace() {
             {project.skillIds?.length ? <>
               <label className="text-xs text-[var(--color-charcoal)]">Select skill register<select aria-label="Active project skill" value={selectedSkillId} disabled={busy} onChange={event => setSelectedSkillId(event.target.value)} className="mt-1 bg-[var(--color-parchment)] text-sm border border-[var(--color-ink-black)] rounded-[2.88px]"><option value="">General broadsheet chat</option>{project.skillIds.map(identifier => { const skill = skillById(identifier); return skill && <option key={identifier} value={identifier}>{skill.title} · {skill.agent.name}</option>; })}</select></label>
               {selectedSkillId && <><p className="text-xs text-[var(--color-charcoal)] mt-1">{skillById(selectedSkillId)?.description}</p><button className="button secondary small mt-2" disabled={busy || (skillById(selectedSkillId)?.sourceTypes.length > 0 && !media.some(asset => skillById(selectedSkillId).sourceTypes.includes(asset.type)))} onClick={() => send(null, skillById(selectedSkillId).prompt)}><Sparkles size={13} />Run {skillById(selectedSkillId)?.agent.name}</button></>}
-            </> : <p className="text-xs text-[var(--color-charcoal)] mt-1">Assign specialized skills, or use free-form editorial chat and remix.</p>}
+            </> : <p className="text-xs text-[var(--color-charcoal)] mt-1">Assign specialized skills, or use free-form editorial chat and Studio.</p>}
           </section>}
 
           <div id="creation-content" role="tabpanel" aria-labelledby={tab === 'chat' ? 'chat-tab' : 'remix-tab'} className="creation-content">
@@ -1444,62 +1326,7 @@ function Workspace() {
                 </div>
               </>
             ) : (
-              <div className="remix-panel">
-                <h1 className="text-2xl font-canopee font-normal text-[var(--color-ink-black)] mb-1 leading-[0.98]">Multi-format cross-remix.</h1>
-                <p className="muted font-editorial-new text-sm">Select an asset, choose an output format, and reframe into new channels.</p>
-
-                <form onSubmit={remix} className="remix-form">
-                  <div className="two-columns">
-                    <Field label="Source asset">
-                      <select required value={source} onChange={(event) => setSource(event.target.value)}>
-                        <option value="">Choose an asset…</option>
-                        {media.map((asset) => (
-                          <option key={asset._id} value={asset._id}>{asset.name}</option>
-                        ))}
-                      </select>
-                    </Field>
-                    <Field label="Target format">
-                      <select value={format} onChange={(event) => setFormat(event.target.value)}>
-                        {formats.map((item) => (
-                          <option key={item}>{item}</option>
-                        ))}
-                      </select>
-                    </Field>
-                  </div>
-
-                  <Field label="Editorial instructions (optional)">
-                    <textarea
-                      rows={3}
-                      value={instructions}
-                      onChange={(event) => setInstructions(event.target.value)}
-                      maxLength={3000}
-                      placeholder="Specify tone, angle, audience takeaway, or word count…"
-                    />
-                  </Field>
-
-                  <button disabled={busy || !source} className="button primary">
-                    {busy ? <LoaderCircle className="spin" size={15} /> : <WandSparkles size={15} />}
-                    {busy ? 'Generating remix…' : 'Generate remix'}
-                  </button>
-                </form>
-
-                {!media.length && <p className="muted font-editorial-new text-sm">Deposit at least one source file to unlock cross-remixing.</p>}
-
-                {outputAssetId && (
-                  <section className="remix-output">
-                    <header>
-                      <h2 className="font-canopee font-normal text-xl">Remixed content draft</h2>
-                    </header>
-                    <SavedContent
-                      key={outputAssetId}
-                      projectId={id}
-                      assetId={outputAssetId}
-                      onSaved={contentSaved}
-                      onDirtyChange={setOutputDirty}
-                    />
-                  </section>
-                )}
-              </div>
+              <AgentStudio projectId={id} media={media} onSaved={() => api.get(`/projects/${id}/media`).then(r => setMedia(r.data))} openRunId={studioRunId} onDirtyChange={setOutputDirty} />
             )}
           </div>
         </section>
@@ -1688,3 +1515,6 @@ function BrandSettings() {
     </Shell>
   );
 }
+
+
+

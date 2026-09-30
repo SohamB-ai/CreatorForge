@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Award, Clock, FileCheck, Sparkles, TrendingUp } from 'lucide-react';
+import { Clock, FileCheck, TrendingUp } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -8,7 +8,6 @@ gsap.registerPlugin(ScrollTrigger);
 export function ResultsSection() {
   const containerRef = useRef(null);
   const metricsRef = useRef([]);
-  const testimonialsRef = useRef([]);
 
   const metrics = [
     {
@@ -28,30 +27,6 @@ export function ResultsSection() {
       label: 'Canonized essays and scripts',
       detail: 'Published across Substacks, broadsheets, and video essays.',
       icon: TrendingUp,
-    },
-  ];
-
-  const testimonials = [
-    {
-      quote:
-        'Cut my research-to-draft time from three days to 45 minutes while preserving my exact cadence. It feels like my personal archival researcher.',
-      author: 'Elena Rostova',
-      role: 'Culture and Tech Essayist',
-      outlet: 'The Modern Monograph',
-    },
-    {
-      quote:
-        'Finally, an AI studio that does not flatten my voice into corporate buzzwords. Every piece reads as if I spent days polishing it by hand.',
-      author: 'Marcus Vance',
-      role: 'Independent Editorial Director',
-      outlet: 'Broadsheet Dispatch',
-    },
-    {
-      quote:
-        'Our multi-channel dispatches stay cohesive because every format pulls from one canon. Context switching across tabs is completely gone.',
-      author: 'Priya Nair',
-      role: 'Head of Content',
-      outlet: 'Archetype Studio',
     },
   ];
 
@@ -76,23 +51,6 @@ export function ResultsSection() {
           },
         }
       );
-
-      const quoteItems = testimonialsRef.current.filter(Boolean);
-      gsap.fromTo(
-        quoteItems,
-        { opacity: 0, y: 28 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.7,
-          stagger: 0.12,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: containerRef.current,
-            start: 'top 65%',
-          },
-        }
-      );
     }, containerRef);
 
     return () => ctx.revert();
@@ -114,7 +72,7 @@ export function ResultsSection() {
       </div>
 
       {/* Metric Counters Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {metrics.map((metric, idx) => {
           const Icon = metric.icon;
           return (
@@ -142,32 +100,6 @@ export function ResultsSection() {
             </div>
           );
         })}
-      </div>
-
-      {/* Testimonial Snippets */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {testimonials.map((item, idx) => (
-          <div
-            key={item.author}
-            ref={(el) => (testimonialsRef.current[idx] = el)}
-            className="p-6 rounded-[4px] border border-[var(--border)] bg-[var(--elevated)] flex flex-col justify-between shadow-sm relative"
-          >
-            <div className="text-[var(--accent)] font-heading text-3xl leading-none mb-2 select-none">
-              “
-            </div>
-            <p className="font-body text-base text-[var(--text)] leading-relaxed italic mb-6">
-              {item.quote}
-            </p>
-            <div className="border-t border-[var(--border)]/40 pt-4 flex flex-col">
-              <span className="font-heading font-medium text-[var(--text)] text-sm">
-                {item.author}
-              </span>
-              <span className="font-body text-xs text-[var(--muted)]">
-                {item.role}, {item.outlet}
-              </span>
-            </div>
-          </div>
-        ))}
       </div>
     </section>
   );

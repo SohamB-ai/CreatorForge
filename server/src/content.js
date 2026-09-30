@@ -49,6 +49,7 @@ export function installContentRoutes(app, { ownedMedia, ownedProject }) {
   app.patch('/api/projects/:id/media/:mediaId', mutationRoute(async (request, response) => {
     const asset = await ownedMedia(request);
     ensureText(asset);
+    if (asset.studioRunId) fail(409, 'Edit this structured asset in the Studio.');
     const values = z.object({ content: z.string().min(1, 'Content cannot be empty.').max(MAX_EDIT_BYTES).refine((content) => Buffer.byteLength(content, 'utf8') <= MAX_EDIT_BYTES, 'Content exceeds the 60 KB editing limit.').refine((content) => !content.includes('\0'), 'Text cannot contain null bytes.'), version: z.number().int().nonnegative() }).strict().parse(request.body);
     const size = Buffer.byteLength(values.content, 'utf8');
     await ensureStorage(asset.projectId, size, asset.size);
@@ -70,3 +71,4 @@ export function installContentRoutes(app, { ownedMedia, ownedProject }) {
     response.send(Buffer.from(asset.data, 'base64'));
   }));
 }
+

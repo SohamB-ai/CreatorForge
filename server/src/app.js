@@ -10,6 +10,8 @@ import { z } from 'zod';
 import { User, Project, Media, Message, BrandKit } from './models.js';
 import { createGenerator } from './ai.js';
 import { installGoogleAuth, isAllowedOrigin } from './google-auth.js';
+import { installStudio } from './studio.js';
+import { StudioRun, StudioRevision, StudioRequest } from './studio-models.js';
 import { installContentRoutes } from './content.js';
 import { installChatStream } from './chat-stream.js';
 import { installOnboarding, skillIdsSchema, validateProjectSkills } from './onboarding.js';
@@ -152,7 +154,7 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
   app.delete('/api/projects/:id', asyncRoute(async (request, response) => {
     const found = await ownedProject(request, request.params.id);
     await withProjectMutation(found._id, request.user._id, async () => {
-      await Promise.all([Media.deleteMany({ projectId: found._id }), Message.deleteMany({ projectId: found._id })]);
+      await Promise.all([Media.deleteMany({ projectId: found._id }), Message.deleteMany({ projectId: found._id }), StudioRequest.deleteMany({ runId: { $in: (await StudioRun.find({ projectId: found._id }).select("_id")).map(r => r._id) } }), StudioRevision.deleteMany({ projectId: found._id }), StudioRun.deleteMany({ projectId: found._id })]);
       await found.deleteOne();
     });
     response.status(204).end();
@@ -208,7 +210,7 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
   app.put('/api/brand-kit', asyncRoute(async (request, response) => {
     response.json(await BrandKit.findOneAndUpdate({ userId: request.user._id }, { $set: brandSchema.parse(request.body) }, { new: true, upsert: true, runValidators: true }));
   }));
-  const aiLimiter = rateLimit({ windowMs: 60000, limit: 10, keyGenerator: (request) => request.user._id.toString(), standardHeaders: 'draft-8', legacyHeaders: false, message: { error: 'You have reached the generation limit. Try again in a minute.' } });
+  const aiLimiter = rateLimit({ windowMs: 60000, limit: process.env.RATE_LIMIT_AI ? Number(process.env.RATE_LIMIT_AI) : 10, keyGenerator: (request) => request.user._id.toString(), standardHeaders: 'draft-8', legacyHeaders: false, message: { error: 'You have reached the generation limit. Try again in a minute.' } });
   const inFlight = new Set();
   const withProjectLock = async (projectId, operation) => {
     const key = projectId.toString();
@@ -216,6 +218,7 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
     inFlight.add(key);
     try { return await operation(); } finally { inFlight.delete(key); }
   };
+  installStudio(app, { ownedProject, aiLimiter, withProjectLock, generate });
   installChatStream(app, { aiLimiter, asyncRoute, ownedProject, withProjectLock, generate, streamTimeoutMs });
   app.post('/api/chat', aiLimiter, asyncRoute(async (request, response) => {
     const values = z.object({ projectId: z.string(), message: string(10000).min(1), skillId: string(80).min(1).optional() }).parse(request.body);
@@ -273,3 +276,4 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
   });
   return app;
 }
+

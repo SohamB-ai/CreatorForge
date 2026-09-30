@@ -33,6 +33,7 @@ export const Media = mongoose.model('Media', new Schema({
   mimeType: { type: String, required: true },
   size: { type: Number, required: true },
   data: { type: String, required: true, select: false },
+  studioRunId: { type: Schema.Types.ObjectId, ref: 'StudioRun' },
   sourceMessageId: { type: Schema.Types.ObjectId, ref: 'Message', unique: true, sparse: true },
   autoDescription: { type: String, default: '' },
 }, options));
@@ -60,3 +61,4 @@ export const CreatorProfile = mongoose.model('CreatorProfile', new Schema({
   skillIds: { type: [String], default: [] },
   workflow: { type: String, default: '' },
 }, options));
+

@@ -23,14 +23,22 @@ function ScrollToTop() {
 }
 
 function GsapLenisSync() {
-  const lenis = useLenis(() => {
-    ScrollTrigger.update();
-  });
+  const lenis = useLenis();
 
   useEffect(() => {
     if (!lenis) return;
 
-    // Direct GSAP ticker to advance Lenis in lockstep
+    if (typeof window !== 'undefined') {
+      window.lenis = lenis;
+    }
+
+    // Connect Lenis scroll events to GSAP ScrollTrigger
+    const handleScroll = () => {
+      ScrollTrigger.update();
+    };
+    lenis.on('scroll', handleScroll);
+
+    // Direct GSAP ticker to advance Lenis in lockstep with rendering
     const updateTicker = (time) => {
       lenis.raf(time * 1000);
     };
@@ -39,7 +47,11 @@ function GsapLenisSync() {
     gsap.ticker.lagSmoothing(0);
 
     return () => {
+      lenis.off('scroll', handleScroll);
       gsap.ticker.remove(updateTicker);
+      if (typeof window !== 'undefined' && window.lenis === lenis) {
+        delete window.lenis;
+      }
     };
   }, [lenis]);
 
@@ -53,14 +65,14 @@ export function SmoothScroll({ children }) {
     <ReactLenis
       ref={lenisRef}
       root
+      autoRaf={false}
       options={{
-        lerp: 0.1,
-        duration: 1.2,
+        lerp: 0.08,
         smoothWheel: true,
-        wheelMultiplier: 1,
+        wheelMultiplier: 1.0,
         touchMultiplier: 1.5,
         infinite: false,
-        autoRaf: false,
+        syncTouch: false,
       }}
     >
       <ScrollToTop />

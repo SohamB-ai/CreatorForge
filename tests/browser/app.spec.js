@@ -31,9 +31,9 @@ test('landing, account, projects, media and brand kit work at this viewport', as
   await expect(page.getByLabel('Message CreatorForge')).toHaveValue(/Instagram captions/);
   await page.getByRole('button', { name: 'Send message' }).click();
   await expect(page.getByRole('alert')).toContainText('GEMINI_API_KEY');
-  await page.getByRole('tab', { name: 'Content remix' }).click();
-  await page.getByLabel('Source asset').selectOption({ label: 'brief.txt' });
-  await expect(page.getByRole('button', { name: 'Generate remix' })).toBeEnabled();
+  await page.getByRole('tab', { name: 'Agent Studio' }).click();
+  await page.getByLabel('Idea / source notes').fill('Develop a script from this campaign brief.');
+  await expect(page.getByRole('button', { name: 'Create draft', exact: true })).toBeEnabled();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: `tmp/workspace-${info.project.name}.png`, fullPage: true });
   await page.getByRole('link', { name: 'Brand kit' }).click();
@@ -54,3 +54,4 @@ test('landing, account, projects, media and brand kit work at this viewport', as
   await expect(page.getByRole('heading', { name: 'Welcome back.' })).toBeVisible();
   expect(errors).toEqual([]);
 });
+

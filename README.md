@@ -17,7 +17,7 @@ CreatorForge — one workspace where AI sees everything, connects the dots, and 
 - **Project Workspace** — Create projects, upload mixed media into one workspace
 - **AI Chat with Context** — Chat with AI that understands ALL uploaded files
 - **Smart Content Generation** — AI generates text, analyzes images, transcribes audio, summarizes videos
-- **Content Remixing** — Transform content across formats (image→caption, audio→blog, video→script)
+- **Agent Studio** — Approved script workflows, Shorts, Hook Lab, and source-grounded repurposing with editable drafts and quality audits ([guide](docs/AGENT_STUDIO.md))
 - **Brand Kit** — Set brand guidelines, AI keeps all output on-brand
 
 ## 🛠️ Tech Stack
@@ -126,3 +126,4 @@ See [BUILD_STATUS.md](./BUILD_STATUS.md) for completed work, remaining requireme
 ## 📄 License
 
 MIT
+

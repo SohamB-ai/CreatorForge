@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { ArrowRight, CheckCircle2, Download, FileUp, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { CheckCircle2, Download, FileUp, SlidersHorizontal } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 

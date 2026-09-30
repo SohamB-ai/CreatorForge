@@ -106,6 +106,16 @@ export function createGenerator({ geminiApiKey, geminiModel, aiEnabled = false, 
     }
   };
   generate.configured = configured;
+  generate.structured = async ({ project, brand, media, prompt, instruction, tokens = 4096, signal }) => {
+    const request = prepare({ project, brand, media, history: [], prompt });
+    request.config = { ...request.config, systemInstruction: instruction, responseMimeType: 'application/json', maxOutputTokens: tokens, abortSignal: signal };
+    try {
+      const result = await waitForSignal(generateContent ? generateContent(request) : client.models.generateContent(request), signal);
+      const reason = result?.candidates?.[0]?.finishReason;
+      if (reason && reason !== 'STOP') throw Object.assign(new Error('Generation was incomplete or blocked.'), { status: 503, code: 'AI_INCOMPLETE' });
+      return typeof result === 'string' ? result : result.text;
+    } catch (error) { if (signal?.aborted) throw signal.reason; if (error.code === 'AI_INCOMPLETE') throw error; throw providerFailure(error); }
+  };
   generate.configuration = { enabled: aiEnabled === true, keyPresent, modelPresent, model: modelPresent ? geminiModel : null };
   return generate;
 }
