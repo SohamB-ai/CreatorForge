@@ -287,7 +287,7 @@ function Landing() {
               THE MULTIMODAL CREATIVE WORKSPACE
             </div>
             <h1>
-              Many sources.<br />One creative<br /><span>direction.</span>
+              Many sources.{' '}<br />One creative{' '}<br /><span>direction.</span>
             </h1>
             <p>
               Your images, voice notes, videos, and briefs belong together. Bring them into one workspace, then turn what you have into what comes next.
@@ -1066,7 +1066,10 @@ function Workspace() {
           {health && !health.aiConfigured && (
             <div className="connection-notice" role="status">
               <span className="warning-dot" />
-              <span><strong>AI connection needed.</strong> Your projects and uploads work now. Configure GEMINI_API_KEY and GEMINI_MODEL, then explicitly enable AI generation.</span>
+              <span>
+                <strong>{health.aiConfiguration?.keyPresent && health.aiConfiguration?.modelPresent ? 'AI generation is paused.' : 'AI connection needed.'}</strong>{' '}
+                {health.aiConfiguration?.keyPresent && health.aiConfiguration?.modelPresent ? 'Key and model are configured. Verify provider access with npm run check:ai before enabling generation.' : 'Your projects and uploads work now. Configure GEMINI_API_KEY and GEMINI_MODEL, then explicitly enable AI generation.'}
+              </span>
             </div>
           )}
 
@@ -1360,16 +1363,14 @@ function BrandSettings() {
                 />
               </Field>
               <Field label="Brand colors" hint="Hex codes separated by commas, e.g. #8B5CF6, #10B981.">
-                <div>
-                  <input
-                    name="colors"
-                    value={colorInput}
-                    onChange={(e) => setColorInput(e.target.value)}
-                    placeholder="#8B5CF6, #10B981"
-                  />
-                  <BrandColorPreview colors={colorInput} />
-                </div>
+                <input
+                  name="colors"
+                  value={colorInput}
+                  onChange={(e) => setColorInput(e.target.value)}
+                  placeholder="#8B5CF6, #10B981"
+                />
               </Field>
+              <BrandColorPreview colors={colorInput} />
               <h2 className="guidelines-heading">The creative guardrails</h2>
               <Field label="Brand guidelines">
                 <textarea

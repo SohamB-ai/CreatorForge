@@ -9,7 +9,7 @@ import multer from 'multer';
 import { z } from 'zod';
 import { User, Project, Media, Message, BrandKit } from './models.js';
 import { createGenerator } from './ai.js';
-import { installGoogleAuth } from './google-auth.js';
+import { installGoogleAuth, isAllowedOrigin } from './google-auth.js';
 import { installContentRoutes } from './content.js';
 
 export const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -62,7 +62,12 @@ export function createApp({ jwtSecret, geminiApiKey, geminiModel, aiEnabled = fa
   const generate = createGenerator({ geminiApiKey, geminiModel, aiEnabled, generateContent });
   app.disable('x-powered-by');
   app.use(helmet());
-  app.use(cors({ origin: clientUrl, credentials: true }));
+  app.use(cors({
+    origin: (origin, callback) => {
+      callback(null, isAllowedOrigin(origin, clientUrl));
+    },
+    credentials: true,
+  }));
   const editJson = express.json({ limit: '400kb' });
   app.use('/api/projects/:id/media/:mediaId', (request, response, next) => request.method === 'PATCH' ? editJson(request, response, next) : next());
   app.use(express.json({ limit: '100kb' }));

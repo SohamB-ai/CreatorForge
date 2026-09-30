@@ -20,7 +20,9 @@ const popupErrors = {
   'auth/popup-closed-by-user': 'Google sign-in was cancelled. You can try again.',
   'auth/cancelled-popup-request': 'Google sign-in was cancelled. You can try again.',
   'auth/popup-blocked': 'Your browser blocked the Google popup. Allow popups and try again.',
-  'auth/unauthorized-domain': 'Google sign-in is not enabled for this hostname yet.',
+  'auth/unauthorized-domain': 'Google sign-in is not enabled for this hostname yet. Add this domain in Firebase Console under Authentication > Settings > Authorized domains.',
+  'auth/operation-not-allowed': 'Google sign-in provider is not enabled in Firebase Console. Go to Firebase Authentication > Sign-in method and enable Google.',
+  'auth/configuration-not-found': 'Firebase Google sign-in configuration was not found. Check your Firebase project settings.',
   'auth/network-request-failed': 'Google sign-in could not connect. Check your connection and retry.',
 };
 
@@ -86,7 +88,8 @@ export default function GoogleSignIn({ disabled = false, onSuccess, onBusyChange
       const { data } = await api.post('/auth/google/challenge', {}, requestOptions);
       if (mounted.current) await exchange({ idToken, nonce: data.nonce });
     } catch (failure) {
-      if (mounted.current) setError(popupErrors[failure.code] || (failure.response ? errorText(failure) : 'Google sign-in could not complete. Please try again.'));
+      console.error('Google sign-in error:', failure);
+      if (mounted.current) setError(popupErrors[failure.code] || (failure.response ? errorText(failure) : (failure.message || 'Google sign-in could not complete. Please try again.')));
     } finally { setWorking(false); }
   }
   async function link(event) {

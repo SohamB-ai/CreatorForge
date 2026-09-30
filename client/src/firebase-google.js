@@ -9,7 +9,7 @@ export async function signInWithGoogle(config) {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   try {
-    const result = await signInWithPopup(auth, provider);
+    const result = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
     return await result.user.getIdToken(true);
   } finally {
     await signOut(auth);

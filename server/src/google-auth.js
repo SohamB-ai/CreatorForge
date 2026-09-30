@@ -13,6 +13,22 @@ const hash = (value) => createHash('sha256').update(value).digest('hex');
 const reject = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const route = (handler) => (request, response, next) => Promise.resolve(handler(request, response)).catch(next);
 
+export function isAllowedOrigin(origin, clientUrl) {
+  if (!origin) return true;
+  try {
+    const originUrl = new URL(origin);
+    const client = new URL(clientUrl);
+    if (originUrl.origin === client.origin) return true;
+    const isLoopback = (host) => host === 'localhost' || host === '127.0.0.1';
+    if (isLoopback(originUrl.hostname) && isLoopback(client.hostname) && originUrl.port === client.port && originUrl.protocol === client.protocol) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
+
 export function installGoogleAuth(app, { jwtSecret, firebaseConfig, firebaseGoogleEnabled, verifyFirebaseCredential, clientUrl, authLimiter, tokenFor, safeUser }) {
   const configured = firebaseGoogleEnabled === true && typeof firebaseConfig?.projectId === 'string'
     && /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(firebaseConfig.projectId)
@@ -23,7 +39,7 @@ export function installGoogleAuth(app, { jwtSecret, firebaseConfig, firebaseGoog
   const ensureRequest = (request) => {
     if (!configured) reject(503, 'Google sign-in is not configured. Complete Firebase Google provider setup before enabling it.');
     if (request.get('X-CreatorForge-Google') !== '1') reject(403, 'Google sign-in must start from the CreatorForge sign-in page.');
-    if (request.get('Origin') && request.get('Origin') !== new URL(clientUrl).origin) reject(403, 'This sign-in origin is not allowed.');
+    if (request.get('Origin') && !isAllowedOrigin(request.get('Origin'), clientUrl)) reject(403, 'This sign-in origin is not allowed.');
   };
   const verify = verifyFirebaseCredential || (async (credential) => {
     const name = `creatorforge-${firebaseConfig.projectId}`;
